@@ -286,7 +286,7 @@ def render_home():
     
     # 使用 columns 布局，但内部使用自定义 HTML 卡片
     col1, col2, col3 = st.columns(3)
-    
+
     # 辅助函数：渲染卡片
     def card(col, title, desc, icon, target_page):
         with col:
@@ -300,9 +300,16 @@ def render_home():
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            # 透明按钮覆盖整个区域实现点击
-            if st.button(f"Play {title}", key=target_page, use_container_width=True):
+            
+            # -----------------------------------------------------------
+            # 修改位置在这里：
+            # 将 key=target_page 改为 key=title 或者 key=f"btn_{title}"
+            # 这样即使 target_page 相同，只要标题不同，key 就不会冲突
+            # -----------------------------------------------------------
+            if st.button(f"Play {title}", key=f"btn_{title}", use_container_width=True):
                 navigate_to(target_page)
+                
+
 
     # 渲染三个卡片
     card(col1, "Life Stats", "How long have you lived?", "📅", "life_stats")
