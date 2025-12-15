@@ -543,17 +543,20 @@ def render_home():
     st.markdown("<h1 style='text-align:center; font-size:4rem; margin-bottom:10px;'>Neal.fun</h1>", unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>A collection of silly little projects and games</p>", unsafe_allow_html=True)
     
-    # 游戏配置列表
+    # 游戏配置列表 - 扩展至 9 个项目 (3行3列)
     games = [
         ("Life Stats", "How long have you lived?", "📅", "life_stats"),
         ("Spend Money", "Spend Bill Gates' money", "💸", "spend_money"),
         ("Stack Rocks", "A calming rock game", "🪨", "stack_rocks"),
         ("The Deep Sea", "Scroll to the bottom", "🌊", "deep_sea"),
-        ("Space Scale", "Coming Soon", "🪐", "home"),
-        ("Draw Circle", "Coming Soon", "⭕", "home"),
+        ("Space Scale", "Universe size comparison", "🪐", "home"),
+        ("Draw Circle", "Test your drawing skills", "⭕", "home"),
+        ("Trolley Problems", "One person or five?", "🚋", "home"),
+        ("Password Game", "Choose a password", "🔒", "home"),
+        ("Street View", "Weird things on maps", "🌍", "home"),
     ]
     
-    # 3列网格布局
+    # 3列网格布局 (自动换行)
     cols = st.columns(3)
     
     for idx, (title, desc, icon, target) in enumerate(games):
