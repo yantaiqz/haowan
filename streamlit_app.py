@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import random
 
 # ==========================================
 # 1. 全局配置
@@ -8,7 +9,7 @@ st.set_page_config(
     page_title="AI.找乐子 | AI.Fun",
     page_icon="🦕",
     layout="wide",
-    initial_sidebar_state="collapsed"  # 保持侧边栏折叠
+    initial_sidebar_state="collapsed"
 )
 
 # 初始化状态
@@ -16,8 +17,9 @@ if 'water_count' not in st.session_state:
     st.session_state.water_count = 0
 if 'trigger_water' not in st.session_state:
     st.session_state.trigger_water = False
+# 初始化语言状态
 if 'language' not in st.session_state:
-    st.session_state.language = 'zh'  # 默认中文
+    st.session_state.language = 'zh' 
 
 # ==========================================
 # 2. 多语言文本配置
@@ -34,7 +36,6 @@ lang_texts = {
         'footer_btn3': '请杯咖啡 ☕',
         'footer_creator': '老祁走❤️制作',
         'water_bubble': '已浇水 {count} 次',
-        'lang_switch_btn': '切换为英文',
         'games': [
             ("生命统计", "算算你活了多久？", "📅", "https://neal.fun/life-stats/"),
             ("花光首富的钱", "体验挥金如土的感觉", "💸", "https://neal.fun/spend/"),
@@ -58,7 +59,6 @@ lang_texts = {
         'footer_btn3': 'Buy me a coffee ☕',
         'footer_creator': 'Made with ❤️ by LaoQi',
         'water_bubble': 'Watered {count} times',
-        'lang_switch_btn': 'Switch to Chinese',
         'games': [
             ("Life Stats", "How long have you lived?", "📅", "https://neal.fun/life-stats/"),
             ("Spend Money", "Spend Bill Gates' money", "💸", "https://neal.fun/spend/"),
@@ -76,34 +76,59 @@ lang_texts = {
 current_text = lang_texts[st.session_state.language]
 
 # ==========================================
-# 3. 核心 CSS (优化版)
+# 3. 核心 CSS (修复按钮定位)
 # ==========================================
 st.markdown("""
 <style>
-    /* 全局样式 */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
     .stApp {
         background-color: #FFFFFF !important;
         font-family: 'Inter', sans-serif;
         color: #111827;
     }
+    
     .block-container { padding-top: 3rem; }
     #MainMenu, footer, header {visibility: hidden;}
     .stDeployButton {display: none;}
 
-    /* 右上角按钮区域 (语言切换 + 获得新应用) */
-    .top-right-wrapper {
+    /* --- 1. 右上角区域定位 --- */
+    
+    /* (A) Get New Posts 按钮 (HTML链接) - 固定在最右边 */
+    .top-right-link {
         position: absolute;
         top: 20px;
         right: 20px;
         z-index: 9999;
-        display: flex;
-        gap: 12px;
-        align-items: center;
+        text-decoration: none;
     }
 
-    /* 统一按钮样式 */
-    .custom-btn {
+    /* (B) 语言切换按钮 (Streamlit原生按钮) - CSS黑魔法 */
+    /* 我们选中页面中出现的 第一个 .stButton，把它强制移动到右上角 */
+    div[data-testid="stButton"]:nth-of-type(1) {
+        position: absolute;
+        top: 20px;
+        right: 170px; /* 放在 Link 按钮的左边 (根据按钮宽度估算) */
+        z-index: 99999;
+    }
+    
+    /* 美化这个 Streamlit 按钮，让它看起来像 neal.fun 风格 */
+    div[data-testid="stButton"]:nth-of-type(1) button {
+        background-color: white !important;
+        color: #111 !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 6px 14px !important;
+        transition: all 0.2s !important;
+    }
+    div[data-testid="stButton"]:nth-of-type(1) button:hover {
+        background-color: #f9fafb !important;
+        border-color: #111 !important;
+    }
+
+    /* 通用按钮样式 (用于 Footer 和 Link) */
+    .neal-btn {
         font-family: 'Inter', sans-serif;
         background: #fff;
         border: 1px solid #e5e7eb;
@@ -114,172 +139,90 @@ st.markdown("""
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s;
-        text-decoration: none !important;
-        border: none; /* 去掉streamlit按钮默认边框 */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
-    .custom-btn:hover {
+    .neal-btn:hover {
         background: #f9fafb;
         border-color: #111;
         transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
-    /* 标题样式 */
+    /* 标题与卡片样式 */
     .main-title {
-        text-align: center;
-        font-size: 4rem;
-        font-weight: 900;
-        margin-bottom: 10px;
-        letter-spacing: -2px;
-        color: #111;
+        text-align: center; font-size: 4rem; font-weight: 900;
+        margin-bottom: 10px; letter-spacing: -2px; color: #111;
     }
     .subtitle {
-        text-align: center;
-        font-size: 1.25rem;
-        color: #6B7280;
-        margin-bottom: 50px;
-        font-weight: 400;
+        text-align: center; font-size: 1.25rem; color: #6B7280;
+        margin-bottom: 50px; font-weight: 400;
     }
-
-    /* 卡片样式 */
-    .card-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        margin-bottom: 20px;
-    }
+    .card-link { text-decoration: none; color: inherit; display: block; margin-bottom: 20px; }
     .neal-card {
-        background-color: #FFFFFF;
-        border-radius: 16px;
-        padding: 24px;
-        height: 110px;
-        width: 100%;
-        border: 1px solid #E5E7EB;
+        background-color: #FFFFFF; border-radius: 16px; padding: 24px;
+        height: 110px; width: 100%; border: 1px solid #E5E7EB;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        display: flex; flex-direction: row; align-items: center; gap: 16px;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 16px;
     }
     .neal-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
-        border-color: #d1d5db;
+        box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1); border-color: #d1d5db;
     }
     .card-icon { font-size: 36px; flex-shrink: 0; }
     .card-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #111; }
     .card-desc { font-size: 14px; color: #6B7280; line-height: 1.4; }
 
-    /* 底部样式 */
+    /* Footer 样式 */
     .footer-area {
-        max-width: 800px;
-        margin: 80px auto 40px;
-        padding-top: 40px;
-        border-top: 1px solid #f3f4f6;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        max-width: 800px; margin: 80px auto 40px; padding-top: 40px;
+        border-top: 1px solid #f3f4f6; text-align: center;
+        display: flex; flex-direction: column; align-items: center;
     }
-    .footer-title {
-        font-weight: 800;
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-    }
-    .footer-text {
-        color: #6B7280;
-        font-size: 15px;
-        line-height: 1.6;
-        max-width: 500px;
-        margin-bottom: 30px;
-    }
-    .footer-links {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 16px;
-        width: 100%;
-    }
+    .footer-title { font-weight: 800; font-size: 1.5rem; margin-bottom: 10px; }
+    .footer-text { color: #6B7280; font-size: 15px; line-height: 1.6; max-width: 500px; margin-bottom: 30px; }
+    .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; width: 100%; }
 
     /* 浇水彩蛋 */
-    .plant-container {
-        position: fixed; bottom: 20px; right: 20px;
-        text-align: center; z-index: 999;
-    }
+    .plant-container { position: fixed; bottom: 20px; right: 20px; text-align: center; z-index: 999; }
     .water-bubble {
-        background: white; padding: 6px 10px; border-radius: 8px;
-        font-size: 12px; font-weight: 700;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        margin-bottom: 6px; opacity: 0; transition: opacity 0.3s;
+        background: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 6px; opacity: 0; transition: opacity 0.3s;
     }
     .show-bubble { opacity: 1; }
     .plant-emoji { font-size: 50px; cursor: pointer; transition: transform 0.2s; }
     .plant-emoji:hover { transform: scale(1.1); }
-
-    /* 移动端适配 */
-    @media (max-width: 768px) {
-        .top-right-wrapper {
-            position: static;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-    }
-
-    /* 隐藏streamlit按钮的默认样式 */
-    div[data-testid="stButton"] > button {
-        all: unset; /* 清空默认样式 */
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. 语言切换核心函数
-# ==========================================
-def switch_language():
-    """切换语言并重新渲染"""
-    if st.session_state.language == 'zh':
-        st.session_state.language = 'en'
-    else:
-        st.session_state.language = 'zh'
-    st.rerun()  # 关键：重新渲染页面使语言生效
-
-# ==========================================
-# 5. 页面渲染逻辑
+# 4. 页面渲染逻辑
 # ==========================================
 def render_home():
-    # 1. 右上角区域（用streamlit按钮实现可点击的语言切换）
-    st.markdown('<div class="top-right-wrapper">', unsafe_allow_html=True)
-    
-    # 语言切换按钮（streamlit原生按钮，绑定切换逻辑）
-    lang_btn_col = st.columns([1])[0]
-    with lang_btn_col:
-        if st.button(
-            label=current_text['lang_switch_btn'],
-            key="lang_switch_btn",
-            on_click=switch_language,
-            use_container_width=False
-        ):
-            pass  # 逻辑在on_click中执行
-    
-    # 获得新应用按钮（HTML链接）
+    # 【核心修复】
+    # 1. 这里是真正的 Streamlit 按钮，它会触发 Python 逻辑。
+    # 2. 我们用上面的 CSS (div:nth-of-type(1)) 把它“踢”到了右上角。
+    # 3. 放在 render_home 的第一行，确保它是页面里的第一个按钮，这样 CSS 才能选中它。
+    btn_label = "English" if st.session_state.language == 'zh' else "中文"
+    if st.button(btn_label, key="lang_switch_real"):
+        st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
+        st.rerun()
+
+    # 渲染右上角的 "Get new apps" 链接 (纯HTML，不涉及Python逻辑)
     st.markdown(f"""
-    <a href="https://neal.fun/newsletter/" target="_blank" class="custom-btn">
-        {current_text['top_right_btn']}
+    <a href="https://neal.fun/newsletter/" target="_blank" class="top-right-link">
+        <button class="neal-btn">{current_text['top_right_btn']}</button>
     </a>
     """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. 标题区
+    # 标题区
     st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
     
-    # 3. 游戏卡片
-    games = current_text['games']
+    # 游戏卡片网格
     cols = st.columns(3)
-    for idx, (title, desc, icon, url) in enumerate(games):
+    for idx, (title, desc, icon, url) in enumerate(current_text['games']):
         with cols[idx % 3]:
             st.markdown(f"""
             <a href="{url}" target="_blank" class="card-link">
@@ -293,22 +236,22 @@ def render_home():
             </a>
             """, unsafe_allow_html=True)
 
-    # 4. 底部区域
+    # Footer 区域
     st.markdown(f"""
     <div class="footer-area">
         <div class="footer-title">{current_text['footer_title']}</div>
         <div class="footer-text">{current_text['footer_text']}</div>
         <div class="footer-links">
-            <a href="https://neal.fun/newsletter/" target="_blank" class="custom-btn">{current_text['footer_btn1']}</a>
-            <a href="https://twitter.com/nealagarwal" target="_blank" class="custom-btn">{current_text['footer_btn2']}</a>
-            <a href="https://buymeacoffee.com/nealagarwal" target="_blank" class="custom-btn">{current_text['footer_btn3']}</a>
+            <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn1']}</button></a>
+            <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
+            <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn3']}</button></a>
         </div>
         <br><br>
         <div style="color: #9CA3AF; font-size: 14px;">{current_text['footer_creator']}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 5. 浇水彩蛋
+    # 浇水彩蛋
     water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
     bubble_class = "show-bubble" if st.session_state.trigger_water else ""
     st.markdown(f"""
@@ -318,7 +261,7 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # 浇水按钮
+    # 隐形浇水触发器 (这是页面上第二个 st.button，所以不会被上面的 CSS 影响)
     c1, c2 = st.columns([10, 1])
     with c2:
         if st.button("💧"):
@@ -327,12 +270,11 @@ def render_home():
             st.rerun()
 
 # ==========================================
-# 6. 程序入口
+# 5. 程序入口
 # ==========================================
 if __name__ == "__main__":
     render_home()
     
-    # 重置浇水动画
     if st.session_state.trigger_water:
         time.sleep(1.5)
         st.session_state.trigger_water = False
