@@ -76,7 +76,7 @@ lang_texts = {
 current_text = lang_texts[st.session_state.language]
 
 # ==========================================
-# 3. 核心 CSS (修复按钮定位)
+# 3. 核心 CSS
 # ==========================================
 st.markdown("""
 <style>
@@ -88,55 +88,39 @@ st.markdown("""
         color: #111827;
     }
     
-    .block-container { padding-top: 3rem; }
+    /* 调整顶部间距，给按钮留出空间 */
+    .block-container { padding-top: 1rem; }
+    
+    /* 隐藏 Streamlit 自带元素 */
     #MainMenu, footer, header {visibility: hidden;}
     .stDeployButton {display: none;}
 
-    /* --- 1. 右上角区域定位 --- */
-    
-    /* (A) Get New Posts 按钮 (HTML链接) - 固定在最右边 (Right: 20px) */
-    .top-right-link {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        text-decoration: none;
-    }
-
-    /* (B) 语言切换按钮 (Streamlit原生按钮) - CSS黑魔法 */
-    /* 我们选中页面中出现的 第一个 .stButton，把它强制移动到 (A) 的左边 */
-    div[data-testid="stButton"]:nth-of-type(1) {
-        position: absolute;
-        top: 20px;
-        /* 右边距 = GetNewApps按钮宽(约140px) + 间距(10px) + 边距(20px) = 170px */
-        right: 170px; 
-        z-index: 99999;
-    }
-    
-    /* 美化这个 Streamlit 按钮，让它看起来像 neal.fun 风格 */
-    div[data-testid="stButton"]:nth-of-type(1) button {
+    /* ----------------------
+       按钮样式 (统一风格)
+       ---------------------- */
+    /* 1. Streamlit 原生按钮 (语言切换) */
+    .stButton > button {
         background-color: white !important;
         color: #111 !important;
         border: 1px solid #e5e7eb !important;
         border-radius: 8px !important;
         font-weight: 600 !important;
+        font-size: 14px !important;
         padding: 6px 14px !important;
         transition: all 0.2s !important;
         height: auto !important;
         min-height: 0px !important;
         line-height: 1.5 !important;
+        width: 100%; /* 填满列宽 */
     }
-    div[data-testid="stButton"]:nth-of-type(1) button:hover {
+    .stButton > button:hover {
         background-color: #f9fafb !important;
         border-color: #111 !important;
         transform: translateY(-1px);
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    div[data-testid="stButton"]:nth-of-type(1) button:active {
-        background-color: #f3f4f6 !important;
-    }
 
-    /* 通用按钮样式 (用于 Footer 和 Link) */
+    /* 2. HTML 链接按钮 (Get New Apps) */
     .neal-btn {
         font-family: 'Inter', sans-serif;
         background: #fff;
@@ -151,22 +135,30 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        white-space: nowrap;
+        text-decoration: none !important;
+        width: 100%;
+        height: 38px; /* 强制与 st.button 高度对齐 */
     }
     .neal-btn:hover {
         background: #f9fafb;
         border-color: #111;
         transform: translateY(-1px);
     }
+    .neal-btn-link { text-decoration: none; width: 100%; display: block; }
 
     /* 标题与卡片样式 */
     .main-title {
         text-align: center; font-size: 4rem; font-weight: 900;
-        margin-bottom: 10px; letter-spacing: -2px; color: #111;
+        margin-bottom: 10px; margin-top: -20px; /* 因为上面有按钮列，把标题往上拉一点 */
+        letter-spacing: -2px; color: #111;
     }
     .subtitle {
         text-align: center; font-size: 1.25rem; color: #6B7280;
         margin-bottom: 50px; font-weight: 400;
     }
+    
+    /* 卡片网格 */
     .card-link { text-decoration: none; color: inherit; display: block; margin-bottom: 20px; }
     .neal-card {
         background-color: #FFFFFF; border-radius: 16px; padding: 24px;
@@ -210,25 +202,29 @@ st.markdown("""
 # ==========================================
 def render_home():
     # ----------------------------------------------------
-    # 1. 语言切换按钮 (Streamlit原生)
+    # 1. 顶部按钮行 (使用 Columns 布局，稳定可靠)
     # ----------------------------------------------------
-    # CSS 注意：这里必须是页面代码中第一个 st.button
-    # CSS 会自动将它定位到右上角 (right: 170px)
-    lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
-    if st.button(lang_btn_text, key="lang_switch_main"):
-        st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
-        st.rerun()
+    # 布局逻辑：[ 空白占位符 (8份) ] | [ 语言按钮 (1份) ] | [ Get App 链接 (1.5份) ]
+    c_spacer, c_lang, c_link = st.columns([10, 1.2, 1.8])
+    
+    with c_lang:
+        # Streamlit 原生按钮，用于 Python 逻辑切换
+        lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
+        if st.button(lang_btn_text, key="lang_switch_main"):
+            st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
+            st.rerun()
+
+    with c_link:
+        # HTML 链接按钮
+        st.markdown(f"""
+        <a href="https://neal.fun/newsletter/" target="_blank" class="neal-btn-link">
+            <button class="neal-btn">{current_text['top_right_btn']}</button>
+        </a>
+        """, unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # 2. 获得新应用按钮 (HTML 链接)
+    # 2. 页面主体
     # ----------------------------------------------------
-    # CSS 注意：class="top-right-link" 会将其定位到 (right: 20px)
-    st.markdown(f"""
-    <a href="https://neal.fun/newsletter/" target="_blank" class="top-right-link">
-        <button class="neal-btn">{current_text['top_right_btn']}</button>
-    </a>
-    """, unsafe_allow_html=True)
-
     # 标题区
     st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
