@@ -35,7 +35,7 @@ if 'trigger_water' not in st.session_state:
     st.session_state.trigger_water = False
 
 # ==========================================
-# 2. 核心 CSS 样式 (1:1匹配Neal.fun)
+# 2. 核心 CSS 样式 (1:1匹配Neal.fun + 9卡片布局优化)
 # ==========================================
 st.markdown("""
 <style>
@@ -71,14 +71,23 @@ st.markdown("""
     }
 
     /* ----------------------
-       Neal.fun 卡片样式 (1:1尺寸)
+       Neal.fun 卡片样式 (优化9卡片布局)
        ---------------------- */
+    /* 卡片容器 - 适配9卡片网格 */
+    .cards-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+        gap: 20px;
+        padding: 0 10px;
+    }
+
     .neal-card {
         background-color: #FFFFFF;
         border-radius: 16px;
         padding: 24px 16px;
         height: 107px; /* Neal.fun原版卡片高度 */
-        width: 100%;
         border: 1px solid #E5E7EB;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         transition: all 0.2s ease;
@@ -188,10 +197,15 @@ st.markdown("""
     }
 
     /* ----------------------
-       隐形按钮黑魔法
+       隐形按钮黑魔法 (适配9卡片)
        ---------------------- */
     /* 针对卡片区域的按钮 */
-    div[data-testid="column"] .stButton {
+    .card-item {
+        position: relative;
+        height: 107px;
+    }
+    
+    .card-item .stButton {
         position: absolute;
         top: 0; left: 0; bottom: 0; right: 0;
         width: 100%; height: 100%;
@@ -199,14 +213,14 @@ st.markdown("""
         margin: 0 !important;
     }
     
-    div[data-testid="column"] .stButton > button {
+    .card-item .stButton > button {
         width: 100%; height: 100%;
         background: transparent !important;
         color: transparent !important;
         border: none !important;
         box-shadow: none !important;
     }
-    div[data-testid="column"] .stButton > button:hover {
+    .card-item .stButton > button:hover {
         background: transparent !important;
         color: transparent !important;
         border: none !important;
@@ -254,11 +268,25 @@ st.markdown("""
     }
 
     /* 响应式适配 */
-    @media (max-width: 768px) {
+    @media (max-width: 1200px) {
+        .cards-container {
+            max-width: 900px;
+        }
+    }
+    @media (max-width: 900px) {
+        .cards-container {
+            max-width: 600px;
+        }
         .top-right-btn {
             position: static;
             margin-bottom: 20px;
             text-align: right;
+        }
+    }
+    @media (max-width: 600px) {
+        .cards-container {
+            max-width: 100%;
+            grid-template-columns: 1fr;
         }
         .footer-links {
             flex-direction: column;
@@ -533,7 +561,7 @@ def render_deep_sea():
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 10. 主页 (Home) - 核心展示区
+# 10. 主页 (Home) - 9卡片布局核心优化
 # ==========================================
 def render_home():
     # 右上角按钮
@@ -543,36 +571,47 @@ def render_home():
     st.markdown("<h1 style='text-align:center; font-size:4rem; margin-bottom:10px;'>Neal.fun</h1>", unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>A collection of silly little projects and games</p>", unsafe_allow_html=True)
     
-    # 游戏配置列表
+    # 游戏配置列表 - 扩展到9个游戏
     games = [
         ("Life Stats", "How long have you lived?", "📅", "life_stats"),
         ("Spend Money", "Spend Bill Gates' money", "💸", "spend_money"),
         ("Stack Rocks", "A calming rock game", "🪨", "stack_rocks"),
         ("The Deep Sea", "Scroll to the bottom", "🌊", "deep_sea"),
-        ("Space Scale", "Coming Soon", "🪐", "home"),
-        ("Draw Circle", "Coming Soon", "⭕", "home"),
+        ("Space Scale", "Explore the scale of space", "🪐", "home"),
+        ("Draw Circle", "Test your circle skills", "⭕", "home"),
+        ("Color Switch", "Match colors to patterns", "🎨", "home"),
+        ("Word Cloud", "Generate custom word clouds", "☁️", "home"),
+        ("Timer Game", "Simple countdown fun", "⏱️", "home"),
     ]
     
-    # 3列网格布局
-    cols = st.columns(3)
+    # 渲染9卡片网格容器
+    st.markdown('<div class="cards-container">', unsafe_allow_html=True)
     
+    # 循环渲染9个卡片
     for idx, (title, desc, icon, target) in enumerate(games):
-        with cols[idx % 3]:
-            # 1. 渲染视觉层 HTML (匹配neal.fun卡片样式)
-            st.markdown(f"""
-            <div class="neal-card">
-                <div class="card-icon">{icon}</div>
-                <div class="card-content">
-                    <div class="card-title">{title}</div>
-                    <div class="card-desc">{desc}</div>
-                </div>
+        # 每个卡片项容器
+        st.markdown('<div class="card-item">', unsafe_allow_html=True)
+        
+        # 1. 渲染视觉层 HTML (匹配neal.fun卡片样式)
+        st.markdown(f"""
+        <div class="neal-card">
+            <div class="card-icon">{icon}</div>
+            <div class="card-content">
+                <div class="card-title">{title}</div>
+                <div class="card-desc">{desc}</div>
             </div>
-            """, unsafe_allow_html=True)
-            
-            # 2. 渲染交互层 Invisible Button
-            if st.button(" ", key=f"nav_btn_{idx}"):
-                if target != 'home':
-                    navigate_to(target)
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 2. 渲染交互层 Invisible Button
+        if st.button(" ", key=f"nav_btn_{idx}"):
+            if target != 'home':
+                navigate_to(target)
+                
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 关闭卡片容器
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------
     # 浇水彩蛋 (全局渲染)
