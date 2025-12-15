@@ -223,9 +223,7 @@ def render_plant_easter_egg():
     <div class="plant-stat">
         Watered <b>{st.session_state.water_count}</b> times
     </div>
-    
     <div class="watering-can">🚿</div>
-    
     <div class="plant-img" style="font-size:60px;">🪴</div>
 </div>
     """
@@ -325,7 +323,7 @@ def render_home():
     card(c6, "Rocks", "Stacking rocks", "🪨", "home")
 
     # 渲染全局浇水彩蛋
-    render_plant_easter_egg()
+    # render_plant_easter_egg()
 
 # ==========================================
 # 6. 程序入口
