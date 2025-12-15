@@ -13,14 +13,29 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 初始化 Session State（保留浇水彩蛋状态）
+# 初始化 Session State
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
+
+# 游戏状态：花光首富的钱
+if 'money' not in st.session_state:
+    st.session_state.total_money = 100000000000
+    st.session_state.balance = 100000000000
+if 'cart' not in st.session_state:
+    st.session_state.cart = {}
+
+# 游戏状态：叠石头
+if 'rock_count' not in st.session_state:
+    st.session_state.rock_count = 0
+
+# 彩蛋状态：浇水
 if 'water_count' not in st.session_state:
     st.session_state.water_count = 0
 if 'trigger_water' not in st.session_state:
     st.session_state.trigger_water = False
 
 # ==========================================
-# 2. 核心 CSS 样式 (保留所有视觉样式 + 超链接优化)
+# 2. 核心 CSS 样式 (1:1匹配Neal.fun)
 # ==========================================
 st.markdown("""
 <style>
@@ -56,30 +71,14 @@ st.markdown("""
     }
 
     /* ----------------------
-       Neal.fun 卡片样式 + 超链接优化
+       Neal.fun 卡片样式 (1:1尺寸)
        ---------------------- */
-    /* 卡片容器 - 适配9卡片网格 */
-    .cards-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-        gap: 20px;
-        padding: 0 10px;
-    }
-
-    /* 卡片超链接 - 核心：让整个卡片可点击 */
-    .card-link {
-        text-decoration: none !important;
-        display: block; /* 让链接占满整个容器 */
-        height: 107px; /* 匹配卡片高度 */
-    }
-
     .neal-card {
         background-color: #FFFFFF;
         border-radius: 16px;
         padding: 24px 16px;
         height: 107px; /* Neal.fun原版卡片高度 */
+        width: 100%;
         border: 1px solid #E5E7EB;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         transition: all 0.2s ease;
@@ -89,7 +88,7 @@ st.markdown("""
         text-align: left;
         position: relative;
         gap: 16px;
-        cursor: pointer; /* 鼠标指针变为手型 */
+        cursor: pointer;
     }
 
     /* 悬浮动效 - 匹配neal.fun */
@@ -111,18 +110,19 @@ st.markdown("""
         font-size: 18px; 
         font-weight: 700; 
         margin-bottom: 4px; 
-        color: #111 !important; /* 超链接不改变文字颜色 */
+        color: #111; 
         line-height: 1.2;
     }
     .card-desc { 
         font-size: 14px; 
-        color: #6B7280 !important; /* 超链接不改变文字颜色 */
+        color: #6B7280; 
         line-height: 1.4;
     }
 
     /* ----------------------
-       按钮样式 (保留右上角/底部按钮)
+       按钮样式 (1:1匹配neal.fun)
        ---------------------- */
+    /* 全局按钮重置 */
     .stButton > button {
         font-family: 'Inter', sans-serif !important;
         border-radius: 8px !important;
@@ -137,11 +137,23 @@ st.markdown("""
         line-height: 1.5 !important;
     }
 
+    /* 按钮悬浮效果 */
     .stButton > button:hover {
         background: #F9FAFB !important;
         border-color: #D1D5DB !important;
         color: #111827 !important;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* 主要按钮样式 */
+    .primary-btn > button {
+        background: #3B82F6 !important;
+        color: white !important;
+        border-color: #3B82F6 !important;
+    }
+    .primary-btn > button:hover {
+        background: #2563EB !important;
+        border-color: #2563EB !important;
     }
 
     /* 右上角按钮容器 */
@@ -176,8 +188,21 @@ st.markdown("""
     }
 
     /* ----------------------
-       功能性 CSS (保留浇水彩蛋)
+       功能性 CSS
        ---------------------- */
+    /* 余额悬浮条 */
+    .money-bar {
+        position: fixed; top: 0; left: 0; width: 100%;
+        background: #2ecc71; color: white;
+        text-align: center; padding: 15px;
+        font-size: 24px; font-weight: 800;
+        z-index: 999; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 返回按钮 */
+    .back-btn-area { margin-bottom: 20px; }
+    
+    /* 浇水彩蛋 */
     .plant-container {
         position: fixed; bottom: 20px; right: 20px;
         text-align: center; z-index: 999;
@@ -191,28 +216,24 @@ st.markdown("""
     .show-bubble { opacity: 1; }
     .plant-emoji { font-size: 60px; cursor: pointer; transition: transform 0.2s; }
     .plant-emoji:hover { transform: scale(1.1); }
+    
+    /* 深海背景 */
+    .deep-sea-box {
+        border-radius: 20px;
+        padding: 60px;
+        text-align: center;
+        color: white;
+        transition: background-color 0.5s ease;
+        min-height: 400px;
+        display: flex; flex-direction: column; justify-content: center;
+    }
 
     /* 响应式适配 */
-    @media (max-width: 1200px) {
-        .cards-container {
-            max-width: 900px;
-        }
-    }
-    @media (max-width: 900px) {
-        .cards-container {
-            max-width: 600px;
-            grid-template-columns: repeat(2, 1fr);
-        }
+    @media (max-width: 768px) {
         .top-right-btn {
             position: static;
             margin-bottom: 20px;
             text-align: right;
-        }
-    }
-    @media (max-width: 600px) {
-        .cards-container {
-            max-width: 100%;
-            grid-template-columns: 1fr;
         }
         .footer-links {
             flex-direction: column;
@@ -224,7 +245,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. 右上角按钮组件
+# 3. 路由控制
+# ==========================================
+def navigate_to(page):
+    st.session_state.page = page
+    st.rerun()
+
+# ==========================================
+# 4. 右上角按钮组件
 # ==========================================
 def render_top_right_button():
     """渲染右上角 Get New Posts 按钮"""
@@ -233,7 +261,7 @@ def render_top_right_button():
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 底部组件 (匹配neal.fun)
+# 5. 底部组件 (匹配neal.fun)
 # ==========================================
 def render_footer():
     """渲染底部区域"""
@@ -265,7 +293,28 @@ def render_footer():
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. 主页 (Home) - 纯HTML卡片+外部超链接
+# 6. 游戏页面 (保留部分内部逻辑用于演示，主页使用外部链接)
+# ==========================================
+# 这里保留函数是为了代码完整性，实际上主页将跳转到外部链接
+def render_life_stats():
+    st.button("← Back", on_click=lambda: navigate_to('home'))
+    st.markdown("<h1 style='text-align:center; font-size:4rem; margin-bottom:10px'>Life Stats</h1>", unsafe_allow_html=True)
+    # ... (省略具体实现，主页点击将跳出)
+
+def render_spend_money():
+    # ... (省略具体实现，主页点击将跳出)
+    pass
+
+def render_stack_rocks():
+    # ... (省略具体实现，主页点击将跳出)
+    pass
+
+def render_deep_sea():
+    # ... (省略具体实现，主页点击将跳出)
+    pass
+
+# ==========================================
+# 10. 主页 (Home) - 核心展示区
 # ==========================================
 def render_home():
     # 右上角按钮
@@ -275,43 +324,41 @@ def render_home():
     st.markdown("<h1 style='text-align:center; font-size:4rem; margin-bottom:10px;'>Neal.fun</h1>", unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>A collection of silly little projects and games</p>", unsafe_allow_html=True)
     
-    # 游戏配置列表 - 9个游戏 + 对应的外部超链接
+    # 游戏配置列表 - 已更新为外部真实链接 (URL)
     games = [
         ("Life Stats", "How long have you lived?", "📅", "https://neal.fun/life-stats/"),
         ("Spend Money", "Spend Bill Gates' money", "💸", "https://neal.fun/spend/"),
-        ("Stack Rocks", "A calming rock game", "🪨", "https://neal.fun/stack-rocks/"),
-        ("The Deep Sea", "Scroll to the bottom", "🌊", "https://neal.fun/the-deep-sea/"),
-        ("Space Scale", "Explore the scale of space", "🪐", "https://neal.fun/space-scale/"),
-        ("Draw Circle", "Test your circle skills", "⭕", "https://neal.fun/draw-circle/"),
-        ("Color Switch", "Match colors to patterns", "🎨", "https://neal.fun/color-switch/"),
-        ("Word Cloud", "Generate custom word clouds", "☁️", "https://neal.fun/word-cloud/"),
-        ("Timer Game", "Simple countdown fun", "⏱️", "https://neal.fun/timer/"),
+        ("Stack Rocks", "A calming rock game", "🪨", "https://neal.fun/rocks/"),
+        ("The Deep Sea", "Scroll to the bottom", "🌊", "https://neal.fun/deep-sea/"),
+        ("Space Scale", "Universe size comparison", "🪐", "https://neal.fun/size-of-space/"),
+        ("Draw Circle", "Test your drawing skills", "⭕", "https://neal.fun/perfect-circle/"),
+        ("Trolley Problems", "One person or five?", "🚋", "https://neal.fun/absurd-trolley-problems/"),
+        ("Password Game", "Choose a password", "🔒", "https://neal.fun/password-game/"),
+        ("Street View", "Weird things on maps", "🌍", "https://neal.fun/wonders-of-street-view/"),
     ]
     
-    # 渲染9卡片网格容器
-    st.markdown('<div class="cards-container">', unsafe_allow_html=True)
+    # 3列网格布局
+    cols = st.columns(3)
     
-    # 循环渲染9个带超链接的卡片（仅保留视觉层）
     for idx, (title, desc, icon, url) in enumerate(games):
-        # 核心修改：用<a>标签包裹整个卡片，实现点击跳转外部网页
-        card_html = f"""
-        <a href="{url}" target="_blank" class="card-link">
-            <div class="neal-card">
-                <div class="card-icon">{icon}</div>
-                <div class="card-content">
-                    <div class="card-title">{title}</div>
-                    <div class="card-desc">{desc}</div>
+        with cols[idx % 3]:
+            # 【修改核心】
+            # 1. 移除 st.button (交互层)
+            # 2. 直接用 <a> 标签包裹 visual card
+            st.markdown(f"""
+            <a href="{url}" target="_blank" style="text-decoration: none; color: inherit; display: block;">
+                <div class="neal-card">
+                    <div class="card-icon">{icon}</div>
+                    <div class="card-content">
+                        <div class="card-title">{title}</div>
+                        <div class="card-desc">{desc}</div>
+                    </div>
                 </div>
-            </div>
-        </a>
-        """
-        st.markdown(card_html, unsafe_allow_html=True)
-    
-    # 关闭卡片容器
-    st.markdown('</div>', unsafe_allow_html=True)
+            </a>
+            """, unsafe_allow_html=True)
 
     # -----------------------
-    # 浇水彩蛋 (保留)
+    # 浇水彩蛋 (全局渲染)
     # -----------------------
     bubble_class = "show-bubble" if st.session_state.trigger_water else ""
     st.markdown(f"""
@@ -336,13 +383,23 @@ def render_home():
     render_footer()
 
 # ==========================================
-# 6. 程序入口
+# 11. 程序入口
 # ==========================================
 def main():
-    # 直接渲染主页（所有卡片都是外部链接，无需路由）
-    render_home()
+    if st.session_state.page == 'home':
+        render_home()
+    # 注意：由于点击卡片现在会直接跳转到外部链接，
+    # 这里的 elif 分支实际上不会再被首页触发，但保留以防你需要内部调试
+    elif st.session_state.page == 'life_stats':
+        render_life_stats()
+    elif st.session_state.page == 'spend_money':
+        render_spend_money()
+    elif st.session_state.page == 'stack_rocks':
+        render_stack_rocks()
+    elif st.session_state.page == 'deep_sea':
+        render_deep_sea()
         
-    # 重置浇水动画状态
+    # 重置动画状态
     if st.session_state.trigger_water:
         time.sleep(1.5)
         st.session_state.trigger_water = False
