@@ -6,7 +6,7 @@ import random
 # 1. 全局配置
 # ==========================================
 st.set_page_config(
-    page_title="AI.找乐子",
+    page_title="AI.找乐子 | AI.Fun",
     page_icon="🦕",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -17,9 +17,75 @@ if 'water_count' not in st.session_state:
     st.session_state.water_count = 0
 if 'trigger_water' not in st.session_state:
     st.session_state.trigger_water = False
+# 初始化语言状态（默认中文）
+if 'language' not in st.session_state:
+    st.session_state.language = 'zh'  # 'zh' 中文 / 'en' 英文
 
 # ==========================================
-# 2. 核心 CSS (优化版)
+# 2. 多语言文本配置
+# ==========================================
+lang_texts = {
+    'zh': {
+        # 页面核心文本
+        'page_title': 'AI.找乐子',
+        'subtitle': '无聊而有趣的AI网页小应用',
+        'top_right_btn': '✨ 获得新应用',
+        # 底部文本
+        'footer_title': '关于本站',
+        'footer_text': '这里收录了我这些年做的一系列小玩意儿。它们算不上什么实用的东西，但玩起来都还挺有意思的。',
+        'footer_btn1': '订阅新应用 📰',
+        'footer_btn2': '视频号 🐦',
+        'footer_btn3': '请杯咖啡 ☕',
+        'footer_creator': '老祁走❤️制作',
+        # 浇水彩蛋
+        'water_bubble': '已浇水 {count} 次',
+        # 游戏卡片文本
+        'games': [
+            ("生命统计", "算算你活了多久？", "📅", "https://neal.fun/life-stats/"),
+            ("花光首富的钱", "体验挥金如土的感觉", "💸", "https://neal.fun/spend/"),
+            ("叠石头", "治愈系的叠石头游戏", "🪨", "https://neal.fun/rocks/"),
+            ("深海探险", "一直滑到海底最深处", "🌊", "https://neal.fun/deep-sea/"),
+            ("宇宙尺度", "对比宇宙万物的大小", "🪐", "https://neal.fun/size-of-space/"),
+            ("画正圆", "测试你的画圆技巧", "⭕", "https://neal.fun/perfect-circle/"),
+            ("电车难题", "选一个人还是五个人？", "🚋", "https://neal.fun/absurd-trolley-problems/"),
+            ("密码游戏", "设置一个合规的密码", "🔒", "https://neal.fun/password-game/"),
+            ("街景奇观", "地图上的神奇发现", "🌍", "https://neal.fun/wonders-of-street-view/"),
+        ]
+    },
+    'en': {
+        # 页面核心文本
+        'page_title': 'AI.Fun',
+        'subtitle': 'Silly but fun AI web apps',
+        'top_right_btn': '✨ Get new apps',
+        # 底部文本
+        'footer_title': 'About this site',
+        'footer_text': 'This is a collection of silly little projects I\'ve made over the years. None of them are particularly useful, but they\'re all fun to play with.',
+        'footer_btn1': 'Newsletter 📰',
+        'footer_btn2': 'Twitter 🐦',
+        'footer_btn3': 'Buy me a coffee ☕',
+        'footer_creator': 'Made with ❤️ by LaoQi',
+        # 浇水彩蛋
+        'water_bubble': 'Watered {count} times',
+        # 游戏卡片文本
+        'games': [
+            ("Life Stats", "How long have you lived?", "📅", "https://neal.fun/life-stats/"),
+            ("Spend Money", "Spend Bill Gates' money", "💸", "https://neal.fun/spend/"),
+            ("Stack Rocks", "A calming rock game", "🪨", "https://neal.fun/rocks/"),
+            ("The Deep Sea", "Scroll to the bottom", "🌊", "https://neal.fun/deep-sea/"),
+            ("Space Scale", "Universe size comparison", "🪐", "https://neal.fun/size-of-space/"),
+            ("Draw Circle", "Test your drawing skills", "⭕", "https://neal.fun/perfect-circle/"),
+            ("Trolley Problems", "One person or five?", "🚋", "https://neal.fun/absurd-trolley-problems/"),
+            ("Password Game", "Choose a password", "🔒", "https://neal.fun/password-game/"),
+            ("Street View", "Weird things on maps", "🌍", "https://neal.fun/wonders-of-street-view/"),
+        ]
+    }
+}
+
+# 获取当前语言的文本配置
+current_text = lang_texts[st.session_state.language]
+
+# ==========================================
+# 2. 核心 CSS (优化版 + 语言切换按钮样式)
 # ==========================================
 st.markdown("""
 <style>
@@ -43,15 +109,34 @@ st.markdown("""
     .stDeployButton {display: none;}
 
     /* ----------------------
-       1. 右上角按钮 (Get new posts)
-       使用 fixed/absolute 定位，脱离文档流
+       1. 右上角按钮区域 (语言切换 + Get new posts)
        ---------------------- */
-    .top-right-link {
+    .top-right-area {
         position: absolute;
         top: 20px;
         right: 20px;
         z-index: 9999;
-        text-decoration: none;
+        display: flex;
+        gap: 12px; /* 按钮之间的间距 */
+        align-items: center;
+    }
+    
+    .lang-switch-btn {
+        font-family: 'Inter', sans-serif;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        color: #111;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .lang-switch-btn:hover {
+        background: #f9fafb;
+        border-color: #111;
     }
     
     .neal-btn {
@@ -189,10 +274,10 @@ st.markdown("""
 
     /* 手机端适配 */
     @media (max-width: 768px) {
-        .top-right-link {
+        .top-right-area {
             position: static; /* 手机上不固定，流式排列 */
-            display: block;
-            text-align: center;
+            display: flex;
+            justify-content: center;
             margin-bottom: 20px;
         }
     }
@@ -200,33 +285,43 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. 页面渲染逻辑
+# 3. 语言切换函数
 # ==========================================
+def switch_language():
+    """切换语言（中/英）"""
+    if st.session_state.language == 'zh':
+        st.session_state.language = 'en'
+    else:
+        st.session_state.language = 'zh'
+    st.rerun()  # 重新渲染页面
 
+# ==========================================
+# 4. 页面渲染逻辑
+# ==========================================
 def render_home():
-    # 1. 渲染右上角按钮 (直接插入 HTML)
-    st.markdown("""
-    <a href="https://neal.fun/newsletter/" target="_blank" class="top-right-link">
-        <button class="neal-btn">✨ 获得新应用</button>
-    </a>
+    # 1. 渲染右上角区域（语言切换按钮 + 获得新应用按钮）
+    lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
+    st.markdown(f"""
+    <div class="top-right-area">
+        <button class="lang-switch-btn" onclick="javascript:window.location.reload()">{lang_btn_text}</button>
+        <a href="https://neal.fun/newsletter/" target="_blank" class="neal-btn-link">
+            <button class="neal-btn">{current_text['top_right_btn']}</button>
+        </a>
+    </div>
     """, unsafe_allow_html=True)
 
+    # 添加语言切换按钮（实际触发逻辑）
+    # 由于HTML按钮无法直接修改session_state，这里用隐藏的streamlit按钮实现
+    with st.sidebar:  # 放在侧边栏隐藏区域
+        if st.button("切换语言", key="lang_switch", on_click=switch_language):
+            pass
+
     # 2. 标题区
-    st.markdown('<div class="main-title">AI.找乐子</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">无聊而有趣的AI网页小应用</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
     
-    # 3. 游戏卡片数据 (URL 跳转)
-    games = [
-        ("Life Stats", "How long have you lived?", "📅", "https://neal.fun/life-stats/"),
-        ("Spend Money", "Spend Bill Gates' money", "💸", "https://neal.fun/spend/"),
-        ("Stack Rocks", "A calming rock game", "🪨", "https://neal.fun/rocks/"),
-        ("The Deep Sea", "Scroll to the bottom", "🌊", "https://neal.fun/deep-sea/"),
-        ("Space Scale", "Universe size comparison", "🪐", "https://neal.fun/size-of-space/"),
-        ("Draw Circle", "Test your drawing skills", "⭕", "https://neal.fun/perfect-circle/"),
-        ("Trolley Problems", "One person or five?", "🚋", "https://neal.fun/absurd-trolley-problems/"),
-        ("Password Game", "Choose a password", "🔒", "https://neal.fun/password-game/"),
-        ("Street View", "Weird things on maps", "🌍", "https://neal.fun/wonders-of-street-view/"),
-    ]
+    # 3. 游戏卡片数据 (根据当前语言加载)
+    games = current_text['games']
     
     # 3列布局
     cols = st.columns(3)
@@ -246,36 +341,36 @@ def render_home():
             </a>
             """, unsafe_allow_html=True)
 
-    # 4. Footer 区域 (完全匹配 neal.fun 的居中和按钮样式)
-    st.markdown("""
+    # 4. Footer 区域（多语言适配）
+    st.markdown(f"""
     <div class="footer-area">
-        <div class="footer-title">About this site</div>
+        <div class="footer-title">{current_text['footer_title']}</div>
         <div class="footer-text">
-            This is a collection of silly little projects I've made over the years. 
-            None of them are particularly useful, but they're all fun to play with.
+            {current_text['footer_text']}
         </div>
         <div class="footer-links">
             <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none">
-                <button class="neal-btn">订阅新应用 📰</button>
+                <button class="neal-btn">{current_text['footer_btn1']}</button>
             </a>
             <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none">
-                <button class="neal-btn">视频号 🐦</button>
+                <button class="neal-btn">{current_text['footer_btn2']}</button>
             </a>
             <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none">
-                <button class="neal-btn">请杯咖啡 ☕</button>
+                <button class="neal-btn">{current_text['footer_btn3']}</button>
             </a>
         </div>
         <br><br>
-        <div style="color: #9CA3AF; font-size: 14px;">老祁走❤️制作</div>
+        <div style="color: #9CA3AF; font-size: 14px;">{current_text['footer_creator']}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 5. 浇水彩蛋
+    # 5. 浇水彩蛋（多语言适配）
+    water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
     bubble_class = "show-bubble" if st.session_state.trigger_water else ""
     st.markdown(f"""
     <div class="plant-container">
         <div class="water-bubble {bubble_class}">
-            Watered {st.session_state.water_count} times
+            {water_bubble_text}
         </div>
         <div class="plant-emoji">🪴</div>
     </div>
