@@ -23,6 +23,10 @@ if 'page' not in st.session_state:
     st.session_state.page = 'home'
 if 'scroll_position' not in st.session_state:
     st.session_state.scroll_position = 0
+if 'money' not in st.session_state:
+    st.session_state.money = 100000000000  # 1000亿美金
+if 'rock_count' not in st.session_state:
+    st.session_state.rock_count = 0
 
 # 注入精准复刻的CSS（完全匹配neal.fun）
 st.markdown("""
@@ -116,6 +120,16 @@ st.markdown("""
         font-size: 0.875rem;
         color: #666;
         line-height: 1.4;
+    }
+
+    /* 隐藏按钮的样式（核心修复） */
+    .hidden-button {
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        visibility: hidden !important;
+        position: absolute !important;
     }
 
     /* -----------------------------------------------------------
@@ -298,21 +312,21 @@ def render_plant_easter_egg():
     """
     st.markdown(plant_html, unsafe_allow_html=True)
     
-    # 透明触发按钮（覆盖在植物上）
-    col_plant = st.columns([1, 1, 1])[2]
-    with col_plant:
-        if st.button(
-            "water_plant", 
-            key="water_btn",
-            help="Water the plant",
-            use_container_width=False
-        ):
-            st.session_state.water_count += 1
-            st.session_state.trigger_water = True
-            # 1.8秒后重置动画状态（匹配CSS动画时长）
-            time.sleep(1.8)
-            st.session_state.trigger_water = False
-            st.rerun()
+    # 透明触发按钮（覆盖在植物上）- 修复按钮布局
+    if st.button(
+        label="water_plant", 
+        key="water_btn",
+        help="Water the plant",
+        # 使用自定义CSS类隐藏按钮
+        on_click=lambda: (
+            setattr(st.session_state, 'water_count', st.session_state.water_count + 1),
+            setattr(st.session_state, 'trigger_water', True)
+        )
+    ):
+        # 延迟重置动画状态（避免卡顿）
+        time.sleep(1.8)
+        st.session_state.trigger_water = False
+        st.rerun()
 
 # ==========================================
 # 4. 小游戏页面实现 (复刻neal.fun经典游戏)
@@ -365,10 +379,6 @@ def render_spend_money():
               help="返回主页", class_="back-button")
     st.markdown("<h1>💸 Spend Bill Gates' Money</h1>", unsafe_allow_html=True)
     
-    # 初始化金钱状态
-    if 'money' not in st.session_state:
-        st.session_state.money = 100000000000  # 1000亿美金
-    
     # 商品列表 (复刻neal.fun)
     items = [
         ("Coffee", 5),
@@ -398,14 +408,14 @@ def render_spend_money():
                 f"Buy {item_name} (${price:,})",
                 key=f"buy_{item_name}",
                 use_container_width=True,
-                disabled=st.session_state.money < price
+                disabled=st.session_state.money < price,
+                on_click=lambda p=price: setattr(st.session_state, 'money', st.session_state.money - p)
             ):
-                st.session_state.money -= price
                 st.rerun()
     
     # 重置按钮
-    if st.button("Reset Money", key="reset_money", type="secondary"):
-        st.session_state.money = 100000000000
+    if st.button("Reset Money", key="reset_money", type="secondary",
+                on_click=lambda: setattr(st.session_state, 'money', 100000000000)):
         st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -508,19 +518,15 @@ def render_stack_rocks():
               help="返回主页", class_="back-button")
     st.markdown("<h1>🪨 Stacking Rocks</h1>", unsafe_allow_html=True)
     
-    # 初始化石头数量
-    if 'rock_count' not in st.session_state:
-        st.session_state.rock_count = 0
-    
     # 叠石头按钮
     col_rock, col_reset = st.columns([2, 1])
     with col_rock:
-        if st.button("Add a Rock 🪨", key="add_rock", type="primary", use_container_width=True):
-            st.session_state.rock_count += 1
+        if st.button("Add a Rock 🪨", key="add_rock", type="primary", use_container_width=True,
+                    on_click=lambda: setattr(st.session_state, 'rock_count', st.session_state.rock_count + 1)):
             st.rerun()
     with col_reset:
-        if st.button("Reset Stack", key="reset_rocks", type="secondary", use_container_width=True):
-            st.session_state.rock_count = 0
+        if st.button("Reset Stack", key="reset_rocks", type="secondary", use_container_width=True,
+                    on_click=lambda: setattr(st.session_state, 'rock_count', 0)):
             st.rerun()
     
     # 显示石头数量
@@ -564,30 +570,30 @@ def render_home():
         ("Timer", "Simple countdown timer", "⏱️", "home"),
     ]
     
-    # 渲染卡片网格
-    st.markdown('<div class="card-grid">', unsafe_allow_html=True)
-    for title, desc, icon, target in games:
-        # 卡片HTML
-        card_html = f"""
-        <div class="game-card" onclick="navigateTo('{target}')">
-            <div class="emoji-icon">{icon}</div>
-            <div class="card-content">
-                <div class="card-title">{title}</div>
-                <div class="card-desc">{desc}</div>
+    # 渲染卡片网格（修复核心问题：分离卡片显示和按钮触发）
+    card_cols = st.columns(len(games))  # 动态列数适配
+    for idx, (title, desc, icon, target) in enumerate(games):
+        with card_cols[idx % len(card_cols)]:
+            # 卡片HTML（纯展示）
+            st.markdown(f"""
+            <div class="game-card">
+                <div class="emoji-icon">{icon}</div>
+                <div class="card-content">
+                    <div class="card-title">{title}</div>
+                    <div class="card-desc">{desc}</div>
+                </div>
             </div>
-        </div>
-        """
-        st.markdown(card_html, unsafe_allow_html=True)
-        
-        # 隐藏的触发按钮（匹配卡片位置）
-        if st.button(
-            f"btn_{title}",
-            key=f"card_btn_{title}",
-            use_container_width=True,
-            style={"visibility": "hidden", "height": "0px", "padding": "0px", "margin": "0px"}
-        ):
-            navigate_to(target)
-    st.markdown('</div>', unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+            # 触发按钮（使用自定义CSS类隐藏）
+            if st.button(
+                label=f"nav_{title}",
+                key=f"card_btn_{title}",
+                # 应用隐藏样式
+                class_="hidden-button"
+            ):
+                navigate_to(target)
+    
     st.markdown('</div>', unsafe_allow_html=True)
     
     # 渲染浇水彩蛋
@@ -608,5 +614,9 @@ if __name__ == "__main__":
         'stack_rocks': render_stack_rocks
     }
     
-    # 执行页面渲染
-    page_mapping.get(st.session_state.page, render_home)()
+    # 执行页面渲染（增加异常捕获）
+    try:
+        page_mapping.get(st.session_state.page, render_home)()
+    except Exception as e:
+        st.error(f"页面加载出错: {str(e)}")
+        st.button("返回主页", on_click=lambda: navigate_to('home'))
