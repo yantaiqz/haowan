@@ -6,7 +6,7 @@ import random
 # 1. 全局配置
 # ==========================================
 st.set_page_config(
-    page_title="Neal.fun Clone",
+    page_title="AI.找乐子",
     page_icon="🦕",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -207,13 +207,13 @@ def render_home():
     # 1. 渲染右上角按钮 (直接插入 HTML)
     st.markdown("""
     <a href="https://neal.fun/newsletter/" target="_blank" class="top-right-link">
-        <button class="neal-btn">✨ Get new posts</button>
+        <button class="neal-btn">✨ 获得新应用</button>
     </a>
     """, unsafe_allow_html=True)
 
     # 2. 标题区
-    st.markdown('<div class="main-title">Neal.fun</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">A collection of silly little projects and games</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">AI.找乐子</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">无聊而有趣的AI网页小应用</div>', unsafe_allow_html=True)
     
     # 3. 游戏卡片数据 (URL 跳转)
     games = [
@@ -256,17 +256,17 @@ def render_home():
         </div>
         <div class="footer-links">
             <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none">
-                <button class="neal-btn">Newsletter 📰</button>
+                <button class="neal-btn">订阅新应用 📰</button>
             </a>
             <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none">
-                <button class="neal-btn">Twitter 🐦</button>
+                <button class="neal-btn">视频号 🐦</button>
             </a>
             <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none">
-                <button class="neal-btn">Buy me a coffee ☕</button>
+                <button class="neal-btn">请杯咖啡 ☕</button>
             </a>
         </div>
         <br><br>
-        <div style="color: #9CA3AF; font-size: 14px;">Made with ❤️ by Neal Agarwal (Clone)</div>
+        <div style="color: #9CA3AF; font-size: 14px;">老祁走❤️制作</div>
     </div>
     """, unsafe_allow_html=True)
 
