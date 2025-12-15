@@ -266,6 +266,41 @@ st.markdown("""
             gap: 16px;
         }
     }
+
+    /* 关键：修复按钮样式，确保完全透明且不占空间 */
+    div[data-testid="stButton"] > button[aria-label=""] {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* 移除按钮的默认聚焦样式 */
+    div[data-testid="stButton"] > button[aria-label=""]:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* 卡片项容器 - 确保定位上下文 */
+    .card-item {
+        position: relative !important;
+        height: 107px !important;
+        margin-bottom: 20px !important;
+    }
+    
+    /* 按钮容器 - 覆盖整个卡片 */
+    .card-item > div:nth-child(2) {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 10 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -543,26 +578,28 @@ def render_home():
     st.markdown("<h1 style='text-align:center; font-size:4rem; margin-bottom:10px;'>Neal.fun</h1>", unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>A collection of silly little projects and games</p>", unsafe_allow_html=True)
     
-    # 游戏配置列表 - 扩展至 9 个项目 (3行3列)
+    # 游戏配置列表 - 9个游戏
     games = [
         ("Life Stats", "How long have you lived?", "📅", "life_stats"),
         ("Spend Money", "Spend Bill Gates' money", "💸", "spend_money"),
         ("Stack Rocks", "A calming rock game", "🪨", "stack_rocks"),
         ("The Deep Sea", "Scroll to the bottom", "🌊", "deep_sea"),
-        ("Space Scale", "Universe size comparison", "🪐", "home"),
-        ("Draw Circle", "Test your drawing skills", "⭕", "home"),
-        ("Trolley Problems", "One person or five?", "🚋", "home"),
-        ("Password Game", "Choose a password", "🔒", "home"),
-        ("Street View", "Weird things on maps", "🌍", "home"),
+        ("Space Scale", "Explore the scale of space", "🪐", "home"),
+        ("Draw Circle", "Test your circle skills", "⭕", "home"),
+        ("Color Switch", "Match colors to patterns", "🎨", "home"),
+        ("Word Cloud", "Generate custom word clouds", "☁️", "home"),
+        ("Timer Game", "Simple countdown fun", "⏱️", "home"),
     ]
     
-    # 3列网格布局 (自动换行)
-    cols = st.columns(3)
+    # 渲染9卡片网格容器
+    st.markdown('<div class="cards-container">', unsafe_allow_html=True)
     
+    # 循环渲染9个卡片
     for idx, (title, desc, icon, target) in enumerate(games):
-        with cols[idx % 3]:
-            # 1. 渲染视觉层 HTML (匹配neal.fun卡片样式)
-            st.markdown(f"""
+        # 卡片项容器 - 相对定位 + 固定高度
+        st.markdown(f"""
+        <div class="card-item" style="position: relative; height: 107px; margin-bottom: 20px;">
+            <!-- 视觉层卡片 -->
             <div class="neal-card">
                 <div class="card-icon">{icon}</div>
                 <div class="card-content">
@@ -570,15 +607,31 @@ def render_home():
                     <div class="card-desc">{desc}</div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-            
-            # 2. 渲染交互层 Invisible Button
-            if st.button(" ", key=f"nav_btn_{idx}"):
-                if target != 'home':
-                    navigate_to(target)
+            <!-- 按钮容器 - 绝对定位覆盖 -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;">
+        """, unsafe_allow_html=True)
+        
+        # 隐形按钮 - 空标签 + 透明样式
+        btn_placeholder = st.empty()
+        if btn_placeholder.button(
+            label="",
+            key=f"nav_btn_{idx}",
+            help="",
+            on_click=lambda t=target: navigate_to(t) if t != 'home' else None
+        ):
+            pass  # 点击逻辑由 on_click 处理
+        
+        # 关闭按钮容器和卡片项容器
+        st.markdown("""
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # 关闭卡片容器
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------
-    # 浇水彩蛋 (全局渲染)
+    # 浇水彩蛋
     # -----------------------
     bubble_class = "show-bubble" if st.session_state.trigger_water else ""
     st.markdown(f"""
@@ -601,7 +654,6 @@ def render_home():
     
     # 渲染底部区域
     render_footer()
-
 # ==========================================
 # 11. 程序入口
 # ==========================================
