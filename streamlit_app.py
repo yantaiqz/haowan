@@ -219,15 +219,15 @@ def render_plant_easter_egg():
     
     # 动画 HTML 结构
     html_code = f"""
-    <div class="plant-wrapper {animation_class}">
-        <div class="plant-stat">
-            Watered <b>{st.session_state.water_count}</b> times
-        </div>
-        
-        <div class="watering-can">🚿</div>
-        
-        <div class="plant-img" style="font-size:60px;">🪴</div>
+<div class="plant-wrapper {animation_class}">
+    <div class="plant-stat">
+        Watered <b>{st.session_state.water_count}</b> times
     </div>
+    
+    <div class="watering-can">🚿</div>
+    
+    <div class="plant-img" style="font-size:60px;">🪴</div>
+</div>
     """
     st.markdown(html_code, unsafe_allow_html=True)
 
