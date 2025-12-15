@@ -42,7 +42,7 @@ lang_texts = {
             ("巴菲特的组合", "伯克希尔·哈撒韦投资组合演变", "📈", "https://buffett.streamlit.app/"),
             ("染红", "国资投资A股的数据可视化", "🔴", "https://ranhong.streamlit.app/"),
             ("世界房价", "世界城市房价对比", "🌍", "https://fangchan.streamlit.app/"),
-            ("城市房市", "城区房市价格趋势", "🏙️", "https://fangjia.streamlit.app/"),
+            ("中国房市", "城区房市价格趋势", "🏙️", "https://fangjia.streamlit.app/"),
             ("百万投资", "顶尖理财产品的回报率对比", "💹", "https://nblawyer.streamlit.app/"),
             ("国际律师", "各国AI法律咨询和合同审查", "⚖️", "https://chuhai.streamlit.app/"),
             ("Legal1000", "全球法律与合规机构导航", "📚", "https://iterms.streamlit.app/"),
@@ -60,15 +60,15 @@ lang_texts = {
         'footer_creator': 'Made with ❤️ by LaoQi',
         'water_bubble': 'Watered {count} times',
         'games': [
-            ("Life Stats", "How long have you lived?", "📅", "https://neal.fun/life-stats/"),
-            ("Spend Money", "Spend Bill Gates' money", "💸", "https://neal.fun/spend/"),
-            ("Stack Rocks", "A calming rock game", "🪨", "https://neal.fun/rocks/"),
-            ("The Deep Sea", "Scroll to the bottom", "🌊", "https://neal.fun/deep-sea/"),
-            ("Space Scale", "Universe size comparison", "🪐", "https://neal.fun/size-of-space/"),
-            ("Draw Circle", "Test your drawing skills", "⭕", "https://neal.fun/perfect-circle/"),
-            ("Trolley Problems", "One person or five?", "🚋", "https://neal.fun/absurd-trolley-problems/"),
-            ("Password Game", "Choose a password", "🔒", "https://neal.fun/password-game/"),
-            ("Street View", "Weird things on maps", "🌍", "https://neal.fun/wonders-of-street-view/"),
+            ("Wealth Rankings", "Where do I stand?", "💰", "https://youqian.streamlit.app/"),
+            ("AI Rabbit", "One-click AI content detection", "🐰", "https://aituzi.streamlit.app/"),
+            ("Buffett's Portfolio", "Evolution of Berkshire Hathaway's investments", "📈", "https://buffett.streamlit.app/"),
+            ("Red Stain", "Data visualization of state-owned investments in A-shares", "🔴", "https://ranhong.streamlit.app/"),
+            ("Global Housing Prices", "Comparison of world city housing prices", "🌍", "https://fangchan.streamlit.app/"),
+            ("China Housing Market", "Urban housing price trends", "🏙️", "https://fangjia.streamlit.app/"),
+            ("Million-Dollar Investment", "Return comparison of top financial products", "💹", "https://nblawyer.streamlit.app/"),
+            ("International Lawyer", "AI legal consultation & contract review worldwide", "⚖️", "https://chuhai.streamlit.app/"),
+            ("Legal1000", "Global legal & compliance institution navigator", "📚", "https://iterms.streamlit.app/"),
         ]
     }
 }
