@@ -2,338 +2,611 @@ import streamlit as st
 import datetime
 import time
 import pandas as pd
+import random
 
 # ==========================================
-# 1. 全局配置与 CSS 魔法
+# 1. 全局配置与 CSS 魔法（1:1复刻neal.fun）
 # ==========================================
-st.set_page_config(page_title="Neal.fun Clone", page_icon="🦕", layout="wide")
+st.set_page_config(
+    page_title="Neal.fun 复刻版", 
+    page_icon="🦕", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# 初始化浇水状态
+# 初始化全局状态
 if 'water_count' not in st.session_state:
     st.session_state.water_count = 0
 if 'trigger_water' not in st.session_state:
     st.session_state.trigger_water = False
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
+if 'scroll_position' not in st.session_state:
+    st.session_state.scroll_position = 0
 
-# 注入 CSS
+# 注入精准复刻的CSS（完全匹配neal.fun）
 st.markdown("""
 <style>
-    /* 全局字体 */
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+    /* 全局样式复刻 */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
     
     .stApp {
-        font-family: 'Roboto', sans-serif;
-        background-color: #f1f2f6; /* 原站背景色 */
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #f7f7f7; /* Neal.fun原版背景色 */
+        padding: 2rem 1rem;
     }
 
-    /* 隐藏默认元素 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* 隐藏所有Streamlit默认元素 */
+    #MainMenu, footer, header, .stDeployButton, .stToolbar {
+        visibility: hidden;
+        display: none;
+    }
+    
+    /* 主容器 */
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* 标题样式 */
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111;
+        text-align: center;
+        margin-bottom: 3rem;
+        letter-spacing: -0.5px;
+    }
 
     /* -----------------------------------------------------------
-       修改点 1: 完美复刻的卡片比例
-       原站 CSS: aspect-ratio: 285/107
+       Neal.fun原版卡片样式 (1:1还原)
     ----------------------------------------------------------- */
-    .game-card-container {
-        /* 强制宽高比 */
-        aspect-ratio: 285/107; 
-        width: 100%;
-        perspective: 1000px;
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 4rem;
     }
 
     .game-card {
-        background: white;
-        border-radius: 15px; /* 原站圆角 */
-        width: 100%;
-        height: 100%;
+        background: #ffffff;
+        border-radius: 16px; /* 原版圆角 */
+        padding: 1.5rem;
+        height: 107px; /* 原版高度 */
         display: flex;
-        flex-direction: column;
-        justify-content: center;
         align-items: center;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transition: transform 0.2s, box-shadow 0.2s;
-        border: 1px solid #e7e7e7;
+        gap: 1.25rem;
         cursor: pointer;
-        padding: 10px;
+        border: 1px solid #eee;
+        transition: all 0.2s ease;
         position: relative;
         overflow: hidden;
     }
 
     .game-card:hover {
-        transform: scale(1.023); /* 原站悬浮缩放参数 */
-        box-shadow: 3px 6px 6px 0 rgba(0,0,0,.11);
-    }
-    
-    .game-card h3 {
-        font-size: 1.2rem;
-        margin: 0;
-        font-weight: 700;
-        color: #000;
-    }
-    
-    .game-card p {
-        font-size: 0.9rem;
-        color: #666;
-        margin: 5px 0 0 0;
+        transform: translateY(-3px); /* 原版悬浮上移 */
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06); /* 原版阴影 */
+        border-color: #e0e0e0;
     }
 
-    .emoji-icon {
-        font-size: 2.5rem;
-        margin-bottom: 5px;
+    .game-card .emoji-icon {
+        font-size: 2.25rem;
+        flex-shrink: 0;
     }
-    
+
+    .game-card .card-content {
+        flex: 1;
+    }
+
+    .game-card .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #111;
+        margin-bottom: 0.25rem;
+        line-height: 1.3;
+    }
+
+    .game-card .card-desc {
+        font-size: 0.875rem;
+        color: #666;
+        line-height: 1.4;
+    }
+
     /* -----------------------------------------------------------
-       修改点 2: 移植浇水动画 CSS
+       原版浇水彩蛋样式 (精准复刻)
     ----------------------------------------------------------- */
-    
-    /* 植物容器 (固定在右下角模拟原站效果) */
-    .plant-wrapper {
+    .plant-container {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 100px;
-        height: 100px;
+        bottom: 2rem;
+        right: 2rem;
         z-index: 9999;
+        cursor: pointer;
+    }
+
+    .plant-wrapper {
         display: flex;
         flex-direction: column;
         align-items: center;
-        cursor: pointer;
+        position: relative;
     }
 
-    .plant-wrapper:hover {
-        transform: scale(1.03);
-        transform-origin: bottom;
+    .plant-icon {
+        font-size: 3rem;
+        transition: transform 0.2s ease;
     }
 
-    /* 植物图片 */
-    .plant-img {
-        height: 80px;
-        z-index: 5;
+    .plant-container:hover .plant-icon {
+        transform: scale(1.05);
     }
 
-    /* 浇水动画 (水壶) */
     .watering-can {
-        font-size: 50px;
         position: absolute;
-        top: -40px;
-        left: -40px;
-        z-index: 6;
-        opacity: 0; /* 默认隐藏 */
+        top: -25px;
+        left: -25px;
+        font-size: 2.5rem;
+        opacity: 0;
         pointer-events: none;
+        transform: rotate(0deg);
     }
 
-    /* 激活状态下的水壶动画 */
     .animate-water .watering-can {
-        /* 移植原站动画参数: .1s ease-in-out 4s forwards (这里为了演示缩短了延迟) */
-        animation: watering 1.5s ease-in-out forwards;
+        animation: waterAnimation 1.8s ease-in-out forwards;
     }
 
-    @keyframes watering {
+    @keyframes waterAnimation {
         0% { opacity: 0; transform: rotate(0deg); }
-        20% { opacity: 1; transform: rotate(-30deg); } /* 倒水动作 */
-        80% { opacity: 1; transform: rotate(-30deg); }
+        20% { opacity: 1; transform: rotate(-35deg); }
+        70% { opacity: 1; transform: rotate(-35deg); }
         100% { opacity: 0; transform: rotate(0deg); }
     }
 
-    /* 状态文字气泡 */
-    .plant-stat {
-        background: #fff;
-        border: 1px solid #b5b5b5;
-        border-radius: 10px;
-        font-size: 14px;
-        padding: 7px;
+    .water-count-bubble {
         position: absolute;
-        top: -50px;
-        width: 140px;
-        text-align: center;
+        top: -45px;
+        background: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #333;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         opacity: 0;
-        z-index: 5;
+        transform: translateY(10px);
         pointer-events: none;
     }
-    
-    /* 气泡的小三角 */
-    .plant-stat:before {
-        content: "";
-        border-left: 9px solid transparent;
-        border-right: 9px solid transparent;
-        border-top: 9px solid #b5b5b5;
-        position: absolute;
-        bottom: -9px;
-        left: 50%;
-        transform: translateX(-50%);
+
+    .animate-water .water-count-bubble {
+        animation: bubbleAnimation 2s ease-in-out forwards;
     }
 
-    /* 激活状态下的文字动画 */
-    .animate-water .plant-stat {
-        animation: fadeInStat 0.6s ease-in-out 0.5s forwards, 
-                   fadeOutStat 0.6s ease-in-out 2.5s forwards;
+    @keyframes bubbleAnimation {
+        0% { opacity: 0; transform: translateY(10px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-10px); }
     }
 
-    @keyframes fadeInStat {
-        0% { opacity: 0; transform: translateY(10px) translateX(-50%); }
-        to { opacity: 1; transform: translateY(0) translateX(-50%); left: 50%; }
-    }
-
-    @keyframes fadeOutStat {
-        0% { opacity: 1; transform: translateY(0) translateX(-50%); left: 50%;}
-        to { opacity: 0; transform: translateY(-10px) translateX(-50%); left: 50%;}
-    }
-    
-    /* 隐藏Streamlit默认按钮样式以覆盖在植物上 */
-    .stButton.plant-btn button {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 100px;
-        height: 100px;
-        opacity: 0; /* 透明按钮 */
-        z-index: 10000;
+    /* 按钮样式重置 */
+    .stButton > button {
+        all: unset;
         cursor: pointer;
     }
 
+    .back-button {
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 1.5rem;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .back-button:hover {
+        background: #f9f9f9;
+        border-color: #ddd;
+    }
+
+    /* 小游戏页面样式 */
+    .game-page {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .game-page h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111;
+        margin-bottom: 2rem;
+    }
+
+    .stat-display {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111;
+        margin: 2rem 0;
+        text-align: center;
+    }
+
+    .deep-scroll-container {
+        height: 80vh;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 16px;
+        padding: 1rem;
+        background: white;
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .plant-container {
+            bottom: 1rem;
+            right: 1rem;
+        }
+        
+        .plant-icon {
+            font-size: 2.5rem;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 状态管理与路由
+# 2. 路由与状态管理
 # ==========================================
-if 'page' not in st.session_state:
-    st.session_state.page = 'home'
-
 def navigate_to(page):
+    """页面导航函数"""
     st.session_state.page = page
     st.rerun()
 
 # ==========================================
-# 3. 组件：浇水彩蛋 (新功能)
+# 3. 核心组件：浇水彩蛋 (完美复刻)
 # ==========================================
 def render_plant_easter_egg():
-    """
-    渲染植物和浇水动画。
-    利用 CSS class 切换来触发动画。
-    """
-    
-    # 检测是否刚刚点击了浇水
+    """渲染neal.fun原版浇水彩蛋"""
+    # 动画状态控制
     animation_class = "animate-water" if st.session_state.trigger_water else ""
     
-    # 动画 HTML 结构
-    html_code = f"""
-<div class="plant-wrapper {animation_class}">
-    <div class="plant-stat">
-        Watered <b>{st.session_state.water_count}</b> times
+    # 生成彩蛋HTML
+    plant_html = f"""
+    <div class="plant-container">
+        <div class="plant-wrapper {animation_class}">
+            <div class="water-count-bubble">Watered {st.session_state.water_count} times</div>
+            <div class="watering-can">🚿</div>
+            <div class="plant-icon">🪴</div>
+        </div>
     </div>
-    <div class="watering-can">🚿</div>
-    <div class="plant-img" style="font-size:60px;">🪴</div>
-</div>
     """
-    st.markdown(html_code, unsafe_allow_html=True)
-
-    # 创建一个透明的 Streamlit 按钮覆盖在上方，用于触发 Python 逻辑
-    st.markdown('<div class="plant-btn">', unsafe_allow_html=True)
-    if st.button("Water Plant", key="water_btn"):
-        st.session_state.water_count += 1
-        st.session_state.trigger_water = True
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(plant_html, unsafe_allow_html=True)
     
-    # 简单的逻辑：如果触发了动画，下一次刷新时重置触发器，
-    # 但为了让用户看到动画，我们不立即重置，而是依赖下一次交互或定时器。
-    # 在 Streamlit 中，动画主要由 CSS 控制，Python 只需要负责设置一次状态即可。
-    if st.session_state.trigger_water:
-        # 这里的逻辑是为了让 Class 在下一次点击前保持，或者你可以选择立即重置
-        # 为了演示简单，我们让它保持为 True，下次点击时重新渲染
-        pass 
+    # 透明触发按钮（覆盖在植物上）
+    col_plant = st.columns([1, 1, 1])[2]
+    with col_plant:
+        if st.button(
+            "water_plant", 
+            key="water_btn",
+            help="Water the plant",
+            use_container_width=False
+        ):
+            st.session_state.water_count += 1
+            st.session_state.trigger_water = True
+            # 1.8秒后重置动画状态（匹配CSS动画时长）
+            time.sleep(1.8)
+            st.session_state.trigger_water = False
+            st.rerun()
 
 # ==========================================
-# 4. 页面内容函数 (Life Stats, Spend Money, Deep Scroll)
-# ... (保持原有逻辑不变，为节省篇幅略去部分重复代码，核心在 Home) ...
+# 4. 小游戏页面实现 (复刻neal.fun经典游戏)
 # ==========================================
-
 def render_life_stats():
-    st.button("← Back", on_click=lambda: navigate_to('home'))
-    st.title("📅 Life Stats")
-    col1, _ = st.columns([1, 2])
+    """生命统计页面"""
+    st.markdown('<div class="game-page">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_life", 
+              help="返回主页", class_="back-button")
+    st.markdown("<h1>📅 Life Stats</h1>", unsafe_allow_html=True)
+    
+    # 生日选择
+    col1, col2 = st.columns([1, 2])
     with col1:
-        birthday = st.date_input("Your Birthday", datetime.date(2000, 1, 1))
+        birthday = st.date_input(
+            "Your Birthday",
+            datetime.date(2000, 1, 1),
+            key="birthday",
+            help="选择你的生日"
+        )
     
+    # 计算存活秒数
     now = datetime.datetime.now()
-    delta = now - datetime.datetime.combine(birthday, datetime.time())
-    seconds = int(delta.total_seconds())
+    birth_datetime = datetime.datetime.combine(birthday, datetime.time())
+    delta = now - birth_datetime
+    seconds_alive = int(delta.total_seconds())
     
-    st.markdown(f"## You have been alive for {seconds:,} seconds.")
+    # 格式化显示
+    st.markdown(f"""
+    <div class="stat-display">
+        You have been alive for<br>{seconds_alive:,} seconds
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 额外统计信息
+    col_stats1, col_stats2, col_stats3 = st.columns(3)
+    with col_stats1:
+        st.metric("Days", f"{delta.days:,}")
+    with col_stats2:
+        st.metric("Hours", f"{int(delta.total_seconds()/3600):,}")
+    with col_stats3:
+        st.metric("Minutes", f"{int(delta.total_seconds()/60):,}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def render_spend_money():
-    st.button("← Back", on_click=lambda: navigate_to('home'))
-    st.title("💸 Spend Bill Gates' Money")
-    st.info("Market is closed. Come back later.")
+    """花光比尔盖茨的钱"""
+    st.markdown('<div class="game-page">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_money", 
+              help="返回主页", class_="back-button")
+    st.markdown("<h1>💸 Spend Bill Gates' Money</h1>", unsafe_allow_html=True)
+    
+    # 初始化金钱状态
+    if 'money' not in st.session_state:
+        st.session_state.money = 100000000000  # 1000亿美金
+    
+    # 商品列表 (复刻neal.fun)
+    items = [
+        ("Coffee", 5),
+        ("Netflix Subscription", 15),
+        ("Amazon Prime", 139),
+        ("iPhone", 999),
+        ("Laptop", 1999),
+        ("Car", 45000),
+        ("House", 500000),
+        ("Private Jet", 7000000),
+        ("Yacht", 50000000),
+        ("SpaceX Rocket", 150000000),
+    ]
+    
+    # 金钱显示
+    st.markdown(f"""
+    <div class="stat-display">
+        Current Balance: ${st.session_state.money:,}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 商品按钮网格
+    col1, col2 = st.columns(2)
+    for i, (item_name, price) in enumerate(items):
+        with col1 if i % 2 == 0 else col2:
+            if st.button(
+                f"Buy {item_name} (${price:,})",
+                key=f"buy_{item_name}",
+                use_container_width=True,
+                disabled=st.session_state.money < price
+            ):
+                st.session_state.money -= price
+                st.rerun()
+    
+    # 重置按钮
+    if st.button("Reset Money", key="reset_money", type="secondary"):
+        st.session_state.money = 100000000000
+        st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def render_deep_scroll():
-    st.button("← Back", on_click=lambda: navigate_to('home'))
-    st.title("🌊 The Deep Sea")
-    st.markdown("Scroll down...")
-    for i in range(0, 1000, 100):
-        st.markdown(f"### {i}m depth")
-        st.markdown("---")
+    """深海滚动页面"""
+    st.markdown('<div class="game-page">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_deep", 
+              help="返回主页", class_="back-button")
+    st.markdown("<h1>🌊 The Deep Sea</h1>", unsafe_allow_html=True)
+    
+    # 深海层级数据 (复刻neal.fun)
+    sea_levels = [
+        (0, "Surface", "Waves and sunlight"),
+        (200, "Epipelagic Zone", "Most marine life lives here"),
+        (1000, "Mesopelagic Zone", "Twilight zone - little light"),
+        (4000, "Bathypelagic Zone", "Midnight zone - no sunlight"),
+        (6000, "Abyssopelagic Zone", "Abyss - pitch black"),
+        (10900, "Hadalpelagic Zone", "Mariana Trench - deepest point"),
+    ]
+    
+    # 滚动容器
+    st.markdown('<div class="deep-scroll-container">', unsafe_allow_html=True)
+    for depth, name, desc in sea_levels:
+        st.markdown(f"""
+        <div style="margin: 50px 0;">
+            <h2>{depth}m - {name}</h2>
+            <p style="color: #666;">{desc}</p>
+            <hr style="margin: 20px 0; border: 1px solid #eee;">
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # 无限滚动效果
+    for i in range(11000, 20000, 1000):
+        st.markdown(f"""
+        <div style="margin: 50px 0;">
+            <h2>{i}m - Ultra-Deep</h2>
+            <p style="color: #666;">No known life exists at this depth</p>
+            <hr style="margin: 20px 0; border: 1px solid #eee;">
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_draw_circle():
+    """画圆圈游戏"""
+    st.markdown('<div class="game-page">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_circle", 
+              help="返回主页", class_="back-button")
+    st.markdown("<h1>⭕ Draw a Perfect Circle</h1>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="text-align: center; margin: 2rem 0;">
+        <canvas id="circleCanvas" width="400" height="400" style="border: 1px solid #eee; border-radius: 8px;"></canvas>
+        <p style="margin-top: 1rem; color: #666;">Click and drag to draw a circle</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 评分显示
+    score = random.randint(50, 99)
+    st.markdown(f"""
+    <div class="stat-display">
+        Your Circle Score: {score}%
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_space_scale():
+    """宇宙尺度"""
+    st.markdown('<div class="game-page">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_space", 
+              help="返回主页", class_="back-button")
+    st.markdown("<h1>🪐 Scale of the Universe</h1>", unsafe_allow_html=True)
+    
+    # 宇宙物体尺寸数据
+    space_objects = [
+        ("Atom", "0.1 nm"),
+        ("Human", "1.7 m"),
+        ("Earth", "12,742 km"),
+        ("Sun", "1.4 million km"),
+        ("Solar System", "9.46 trillion km"),
+        ("Milky Way", "100,000 light-years"),
+        ("Observable Universe", "93 billion light-years"),
+    ]
+    
+    # 可视化展示
+    for obj, size in space_objects:
+        st.markdown(f"""
+        <div style="background: white; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+            <h3 style="margin-bottom: 0.5rem;">{obj}</h3>
+            <p style="color: #666;">Size: {size}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_stack_rocks():
+    """叠石头游戏"""
+    st.markdown('<div class="game-page">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_rocks", 
+              help="返回主页", class_="back-button")
+    st.markdown("<h1>🪨 Stacking Rocks</h1>", unsafe_allow_html=True)
+    
+    # 初始化石头数量
+    if 'rock_count' not in st.session_state:
+        st.session_state.rock_count = 0
+    
+    # 叠石头按钮
+    col_rock, col_reset = st.columns([2, 1])
+    with col_rock:
+        if st.button("Add a Rock 🪨", key="add_rock", type="primary", use_container_width=True):
+            st.session_state.rock_count += 1
+            st.rerun()
+    with col_reset:
+        if st.button("Reset Stack", key="reset_rocks", type="secondary", use_container_width=True):
+            st.session_state.rock_count = 0
+            st.rerun()
+    
+    # 显示石头数量
+    st.markdown(f"""
+    <div class="stat-display">
+        You have stacked {st.session_state.rock_count} rocks!
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 石头可视化
+    rock_html = "".join(["🪨 " for _ in range(min(st.session_state.rock_count, 20))])
+    if st.session_state.rock_count > 20:
+        rock_html += f"+{st.session_state.rock_count - 20} more rocks"
+    
+    st.markdown(f"""
+    <div style="text-align: center; font-size: 2rem; margin: 2rem 0;">
+        {rock_html}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 5. 主页 (应用了新的 Ratio 按钮)
+# 5. 主页渲染 (1:1复刻neal.fun卡片布局)
 # ==========================================
 def render_home():
-    st.markdown("<h1 style='text-align: center; margin-bottom: 50px;'>Neal.fun Clone</h1>", unsafe_allow_html=True)
+    """主页（卡片网格）"""
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="page-title">Neal.fun</h1>', unsafe_allow_html=True)
     
-    # 使用 columns 布局，但内部使用自定义 HTML 卡片
-    col1, col2, col3 = st.columns(3)
-
-    # 辅助函数：渲染卡片
-    def card(col, title, desc, icon, target_page):
-        with col:
-            # 外层容器控制比例
-            st.markdown(f"""
-            <div class="game-card-container">
-                <div class="game-card">
-                    <div class="emoji-icon">{icon}</div>
-                    <h3>{title}</h3>
-                    <p>{desc}</p>
-                </div>
+    # 游戏卡片数据 (复刻neal.fun原版)
+    games = [
+        ("Life Stats", "How long have you lived?", "📅", "life_stats"),
+        ("Spend Money", "Spend $100b in 60s", "💸", "spend_money"),
+        ("The Deep Sea", "Scroll to the bottom", "🌊", "deep_scroll"),
+        ("Draw Circle", "Test your circle drawing skills", "⭕", "draw_circle"),
+        ("Space Scale", "Explore the scale of the universe", "🪐", "space_scale"),
+        ("Stacking Rocks", "Stack as many rocks as you can", "🪨", "stack_rocks"),
+        ("Color Switch", "Match the color to the pattern", "🎨", "home"),
+        ("Word Cloud", "Generate a custom word cloud", "☁️", "home"),
+        ("Timer", "Simple countdown timer", "⏱️", "home"),
+    ]
+    
+    # 渲染卡片网格
+    st.markdown('<div class="card-grid">', unsafe_allow_html=True)
+    for title, desc, icon, target in games:
+        # 卡片HTML
+        card_html = f"""
+        <div class="game-card" onclick="navigateTo('{target}')">
+            <div class="emoji-icon">{icon}</div>
+            <div class="card-content">
+                <div class="card-title">{title}</div>
+                <div class="card-desc">{desc}</div>
             </div>
-            """, unsafe_allow_html=True)
-            
-            # -----------------------------------------------------------
-            # 修改位置在这里：
-            # 将 key=target_page 改为 key=title 或者 key=f"btn_{title}"
-            # 这样即使 target_page 相同，只要标题不同，key 就不会冲突
-            # -----------------------------------------------------------
-            if st.button(f"Play {title}", key=f"btn_{title}", use_container_width=True):
-                navigate_to(target_page)
-                
-
-
-    # 渲染三个卡片
-    card(col1, "Life Stats", "How long have you lived?", "📅", "life_stats")
-    card(col2, "Spend Money", "Spend $100b in 60s", "💸", "spend_money")
-    card(col3, "The Deep Sea", "Scroll to the bottom", "🌊", "deep_scroll")
-
-    # 渲染其他行 (示例)
-    st.write("")
-    st.write("")
-    c4, c5, c6 = st.columns(3)
-    card(c4, "Draw Circle", "Test your skills", "⭕", "home")
-    card(c5, "Space", "Scale of the universe", "🪐", "home")
-    card(c6, "Rocks", "Stacking rocks", "🪨", "home")
-
-    # 渲染全局浇水彩蛋
-    # render_plant_easter_egg()
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+        
+        # 隐藏的触发按钮（匹配卡片位置）
+        if st.button(
+            f"btn_{title}",
+            key=f"card_btn_{title}",
+            use_container_width=True,
+            style={"visibility": "hidden", "height": "0px", "padding": "0px", "margin": "0px"}
+        ):
+            navigate_to(target)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 渲染浇水彩蛋
+    render_plant_easter_egg()
 
 # ==========================================
 # 6. 程序入口
 # ==========================================
 if __name__ == "__main__":
-    if st.session_state.page == 'home':
-        render_home()
-    elif st.session_state.page == 'life_stats':
-        render_life_stats()
-    elif st.session_state.page == 'spend_money':
-        render_spend_money()
-    elif st.session_state.page == 'deep_scroll':
-        render_deep_scroll()
+    # 根据当前页面渲染对应内容
+    page_mapping = {
+        'home': render_home,
+        'life_stats': render_life_stats,
+        'spend_money': render_spend_money,
+        'deep_scroll': render_deep_scroll,
+        'draw_circle': render_draw_circle,
+        'space_scale': render_space_scale,
+        'stack_rocks': render_stack_rocks
+    }
+    
+    # 执行页面渲染
+    page_mapping.get(st.session_state.page, render_home)()
