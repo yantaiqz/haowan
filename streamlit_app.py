@@ -94,7 +94,7 @@ st.markdown("""
 
     /* --- 1. 右上角区域定位 --- */
     
-    /* (A) Get New Posts 按钮 (HTML链接) - 固定在最右边 */
+    /* (A) Get New Posts 按钮 (HTML链接) - 固定在最右边 (Right: 20px) */
     .top-right-link {
         position: absolute;
         top: 20px;
@@ -104,11 +104,12 @@ st.markdown("""
     }
 
     /* (B) 语言切换按钮 (Streamlit原生按钮) - CSS黑魔法 */
-    /* 我们选中页面中出现的 第一个 .stButton，把它强制移动到右上角 */
+    /* 我们选中页面中出现的 第一个 .stButton，把它强制移动到 (A) 的左边 */
     div[data-testid="stButton"]:nth-of-type(1) {
         position: absolute;
         top: 20px;
-        right: 170px; /* 放在 Link 按钮的左边 (根据按钮宽度估算) */
+        /* 右边距 = GetNewApps按钮宽(约140px) + 间距(10px) + 边距(20px) = 170px */
+        right: 170px; 
         z-index: 99999;
     }
     
@@ -121,10 +122,18 @@ st.markdown("""
         font-weight: 600 !important;
         padding: 6px 14px !important;
         transition: all 0.2s !important;
+        height: auto !important;
+        min-height: 0px !important;
+        line-height: 1.5 !important;
     }
     div[data-testid="stButton"]:nth-of-type(1) button:hover {
         background-color: #f9fafb !important;
         border-color: #111 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    div[data-testid="stButton"]:nth-of-type(1) button:active {
+        background-color: #f3f4f6 !important;
     }
 
     /* 通用按钮样式 (用于 Footer 和 Link) */
@@ -200,16 +209,20 @@ st.markdown("""
 # 4. 页面渲染逻辑
 # ==========================================
 def render_home():
-    # 【核心修复】
-    # 1. 这里是真正的 Streamlit 按钮，它会触发 Python 逻辑。
-    # 2. 我们用上面的 CSS (div:nth-of-type(1)) 把它“踢”到了右上角。
-    # 3. 放在 render_home 的第一行，确保它是页面里的第一个按钮，这样 CSS 才能选中它。
-    btn_label = "English" if st.session_state.language == 'zh' else "中文"
-    if st.button(btn_label, key="lang_switch_real"):
+    # ----------------------------------------------------
+    # 1. 语言切换按钮 (Streamlit原生)
+    # ----------------------------------------------------
+    # CSS 注意：这里必须是页面代码中第一个 st.button
+    # CSS 会自动将它定位到右上角 (right: 170px)
+    lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
+    if st.button(lang_btn_text, key="lang_switch_main"):
         st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
         st.rerun()
 
-    # 渲染右上角的 "Get new apps" 链接 (纯HTML，不涉及Python逻辑)
+    # ----------------------------------------------------
+    # 2. 获得新应用按钮 (HTML 链接)
+    # ----------------------------------------------------
+    # CSS 注意：class="top-right-link" 会将其定位到 (right: 20px)
     st.markdown(f"""
     <a href="https://neal.fun/newsletter/" target="_blank" class="top-right-link">
         <button class="neal-btn">{current_text['top_right_btn']}</button>
@@ -261,7 +274,7 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # 隐形浇水触发器 (这是页面上第二个 st.button，所以不会被上面的 CSS 影响)
+    # 隐形浇水触发器 (页面底部第二个 st.button)
     c1, c2 = st.columns([10, 1])
     with c2:
         if st.button("💧"):
