@@ -122,16 +122,6 @@ st.markdown("""
         line-height: 1.4;
     }
 
-    /* 隐藏按钮的样式（核心修复） */
-    .hidden-button {
-        height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-        visibility: hidden !important;
-        position: absolute !important;
-    }
-
     /* -----------------------------------------------------------
        原版浇水彩蛋样式 (精准复刻)
     ----------------------------------------------------------- */
@@ -206,13 +196,17 @@ st.markdown("""
         100% { opacity: 0; transform: translateY(-10px); }
     }
 
-    /* 按钮样式重置 */
-    .stButton > button {
+    /* 按钮样式重置 - 兼容所有版本 */
+    div[data-testid="stButton"] > button {
         all: unset;
         cursor: pointer;
     }
 
-    .back-button {
+    /* 返回按钮样式 */
+    .back-btn-wrapper {
+        margin-bottom: 1.5rem;
+    }
+    .back-btn-wrapper > button {
         background: white;
         border: 1px solid #eee;
         border-radius: 8px;
@@ -220,12 +214,9 @@ st.markdown("""
         font-size: 0.9rem;
         font-weight: 500;
         color: #333;
-        margin-bottom: 1.5rem;
-        display: inline-block;
         transition: all 0.2s ease;
     }
-
-    .back-button:hover {
+    .back-btn-wrapper > button:hover {
         background: #f9f9f9;
         border-color: #ddd;
     }
@@ -259,6 +250,28 @@ st.markdown("""
         border-radius: 16px;
         padding: 1rem;
         background: white;
+    }
+
+    /* 隐藏浇水按钮 - 核心兼容方案 */
+    #water_btn {
+        position: fixed !important;
+        bottom: 2rem !important;
+        right: 2rem !important;
+        width: 100px !important;
+        height: 100px !important;
+        opacity: 0 !important;
+        z-index: 99999 !important;
+    }
+
+    /* 隐藏卡片触发按钮 - 核心兼容方案 */
+    [data-testid="stButton"] > button[aria-label^="nav_"] {
+        height: 0px !important;
+        width: 0px !important;
+        padding: 0px !important;
+        margin: 0px !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        z-index: -1 !important;
     }
 
     /* 响应式适配 */
@@ -312,18 +325,15 @@ def render_plant_easter_egg():
     """
     st.markdown(plant_html, unsafe_allow_html=True)
     
-    # 透明触发按钮（覆盖在植物上）- 修复按钮布局
+    # 浇水触发按钮（通过ID隐藏，兼容所有版本）
     if st.button(
-        label="water_plant", 
+        label="",  # 空标签
         key="water_btn",
-        help="Water the plant",
-        # 使用自定义CSS类隐藏按钮
-        on_click=lambda: (
-            setattr(st.session_state, 'water_count', st.session_state.water_count + 1),
-            setattr(st.session_state, 'trigger_water', True)
-        )
+        help="Water the plant"
     ):
-        # 延迟重置动画状态（避免卡顿）
+        st.session_state.water_count += 1
+        st.session_state.trigger_water = True
+        # 延迟重置动画状态
         time.sleep(1.8)
         st.session_state.trigger_water = False
         st.rerun()
@@ -334,8 +344,12 @@ def render_plant_easter_egg():
 def render_life_stats():
     """生命统计页面"""
     st.markdown('<div class="game-page">', unsafe_allow_html=True)
-    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_life", 
-              help="返回主页", class_="back-button")
+    
+    # 返回按钮（兼容版）
+    st.markdown('<div class="back-btn-wrapper">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_life")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("<h1>📅 Life Stats</h1>", unsafe_allow_html=True)
     
     # 生日选择
@@ -375,8 +389,12 @@ def render_life_stats():
 def render_spend_money():
     """花光比尔盖茨的钱"""
     st.markdown('<div class="game-page">', unsafe_allow_html=True)
-    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_money", 
-              help="返回主页", class_="back-button")
+    
+    # 返回按钮
+    st.markdown('<div class="back-btn-wrapper">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_money")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("<h1>💸 Spend Bill Gates' Money</h1>", unsafe_allow_html=True)
     
     # 商品列表 (复刻neal.fun)
@@ -408,14 +426,14 @@ def render_spend_money():
                 f"Buy {item_name} (${price:,})",
                 key=f"buy_{item_name}",
                 use_container_width=True,
-                disabled=st.session_state.money < price,
-                on_click=lambda p=price: setattr(st.session_state, 'money', st.session_state.money - p)
+                disabled=st.session_state.money < price
             ):
+                st.session_state.money -= price
                 st.rerun()
     
     # 重置按钮
-    if st.button("Reset Money", key="reset_money", type="secondary",
-                on_click=lambda: setattr(st.session_state, 'money', 100000000000)):
+    if st.button("Reset Money", key="reset_money"):
+        st.session_state.money = 100000000000
         st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -423,8 +441,12 @@ def render_spend_money():
 def render_deep_scroll():
     """深海滚动页面"""
     st.markdown('<div class="game-page">', unsafe_allow_html=True)
-    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_deep", 
-              help="返回主页", class_="back-button")
+    
+    # 返回按钮
+    st.markdown('<div class="back-btn-wrapper">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_deep")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("<h1>🌊 The Deep Sea</h1>", unsafe_allow_html=True)
     
     # 深海层级数据 (复刻neal.fun)
@@ -458,12 +480,17 @@ def render_deep_scroll():
         </div>
         """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def render_draw_circle():
     """画圆圈游戏"""
     st.markdown('<div class="game-page">', unsafe_allow_html=True)
-    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_circle", 
-              help="返回主页", class_="back-button")
+    
+    # 返回按钮
+    st.markdown('<div class="back-btn-wrapper">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_circle")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("<h1>⭕ Draw a Perfect Circle</h1>", unsafe_allow_html=True)
     
     st.markdown("""
@@ -485,8 +512,12 @@ def render_draw_circle():
 def render_space_scale():
     """宇宙尺度"""
     st.markdown('<div class="game-page">', unsafe_allow_html=True)
-    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_space", 
-              help="返回主页", class_="back-button")
+    
+    # 返回按钮
+    st.markdown('<div class="back-btn-wrapper">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_space")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("<h1>🪐 Scale of the Universe</h1>", unsafe_allow_html=True)
     
     # 宇宙物体尺寸数据
@@ -514,19 +545,23 @@ def render_space_scale():
 def render_stack_rocks():
     """叠石头游戏"""
     st.markdown('<div class="game-page">', unsafe_allow_html=True)
-    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_rocks", 
-              help="返回主页", class_="back-button")
+    
+    # 返回按钮
+    st.markdown('<div class="back-btn-wrapper">', unsafe_allow_html=True)
+    st.button("← Back to Home", on_click=lambda: navigate_to('home'), key="back_rocks")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("<h1>🪨 Stacking Rocks</h1>", unsafe_allow_html=True)
     
     # 叠石头按钮
     col_rock, col_reset = st.columns([2, 1])
     with col_rock:
-        if st.button("Add a Rock 🪨", key="add_rock", type="primary", use_container_width=True,
-                    on_click=lambda: setattr(st.session_state, 'rock_count', st.session_state.rock_count + 1)):
+        if st.button("Add a Rock 🪨", key="add_rock", use_container_width=True):
+            st.session_state.rock_count += 1
             st.rerun()
     with col_reset:
-        if st.button("Reset Stack", key="reset_rocks", type="secondary", use_container_width=True,
-                    on_click=lambda: setattr(st.session_state, 'rock_count', 0)):
+        if st.button("Reset Stack", key="reset_rocks", use_container_width=True):
+            st.session_state.rock_count = 0
             st.rerun()
     
     # 显示石头数量
@@ -570,10 +605,11 @@ def render_home():
         ("Timer", "Simple countdown timer", "⏱️", "home"),
     ]
     
-    # 渲染卡片网格（修复核心问题：分离卡片显示和按钮触发）
-    card_cols = st.columns(len(games))  # 动态列数适配
+    # 渲染卡片网格（3列布局，兼容所有屏幕）
+    cols = st.columns(3)
     for idx, (title, desc, icon, target) in enumerate(games):
-        with card_cols[idx % len(card_cols)]:
+        col = cols[idx % 3]
+        with col:
             # 卡片HTML（纯展示）
             st.markdown(f"""
             <div class="game-card">
@@ -585,12 +621,12 @@ def render_home():
             </div>
             """, unsafe_allow_html=True)
             
-            # 触发按钮（使用自定义CSS类隐藏）
+            # 触发按钮（通过aria-label隐藏，兼容所有版本）
             if st.button(
-                label=f"nav_{title}",
+                label="",  # 空标签
                 key=f"card_btn_{title}",
-                # 应用隐藏样式
-                class_="hidden-button"
+                help=title,
+                aria_label=f"nav_{title}"  # 用于CSS选择器隐藏
             ):
                 navigate_to(target)
     
@@ -616,7 +652,9 @@ if __name__ == "__main__":
     
     # 执行页面渲染（增加异常捕获）
     try:
-        page_mapping.get(st.session_state.page, render_home)()
+        current_page = st.session_state.page
+        page_mapping.get(current_page, render_home)()
     except Exception as e:
         st.error(f"页面加载出错: {str(e)}")
-        st.button("返回主页", on_click=lambda: navigate_to('home'))
+        if st.button("返回主页"):
+            navigate_to('home')
