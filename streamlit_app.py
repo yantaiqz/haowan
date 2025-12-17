@@ -6,7 +6,7 @@ import random
 # 1. 全局配置
 # ==========================================
 st.set_page_config(
-    page_title="AI.找乐子 | AI.Fun",
+    page_title="80后老登的工具箱 | AI.Fun",
     page_icon="🦕",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -26,8 +26,8 @@ if 'language' not in st.session_state:
 # ==========================================
 lang_texts = {
     'zh': {
-        'page_title': 'AI.找乐子',
-        'subtitle': '无聊而有趣的AI网页小应用',
+        'page_title': '80后老登的工具箱',
+        'subtitle': '守住底裤的的AI网页小应用',
         'top_right_btn': '✨ 获得新应用',
         'footer_title': '关于本站',
         'footer_text': '这里收录了我这些年做的一系列小玩意儿。它们算不上什么实用的东西，但玩起来都还挺有意思的。',
