@@ -76,124 +76,255 @@ lang_texts = {
 current_text = lang_texts[st.session_state.language]
 
 # ==========================================
-# 3. 核心 CSS
+# 3. 核心 CSS (现代字体优化版)
 # ==========================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+    /* 现代无衬线字体组合 - 优先使用系统原生字体保证性能 */
+    :root {
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        
+        /* 字体大小变量 */
+        --text-xs: 0.75rem;    /* 12px */
+        --text-sm: 0.875rem;   /* 14px */
+        --text-base: 1rem;     /* 16px */
+        --text-lg: 1.125rem;   /* 18px */
+        --text-xl: 1.25rem;    /* 20px */
+        --text-2xl: 1.5rem;    /* 24px */
+        --text-3xl: 1.875rem;  /* 30px */
+        --text-4xl: 2.25rem;   /* 36px */
+        --text-5xl: 3rem;      /* 48px */
+        
+        /* 字重定义 */
+        --font-light: 300;
+        --font-regular: 400;
+        --font-medium: 500;
+        --font-semibold: 600;
+        --font-bold: 700;
+        --font-extrabold: 800;
+        --font-black: 900;
+        
+        /* 颜色变量 */
+        --color-gray-50: #f9fafb;
+        --color-gray-100: #f3f4f6;
+        --color-gray-200: #e5e7eb;
+        --color-gray-300: #d1d5db;
+        --color-gray-400: #9ca3af;
+        --color-gray-500: #6b7280;
+        --color-gray-600: #4b5563;
+        --color-gray-700: #374151;
+        --color-gray-800: #1f2937;
+        --color-gray-900: #111827;
+    }
+
+    /* 全局字体重置 */
+    * {
+        font-family: var(--font-sans) !important;
+        letter-spacing: -0.02em !important; /* 轻微收紧字间距，更现代 */
+    }
 
     .stApp {
         background-color: #FFFFFF !important;
-        font-family: 'Inter', sans-serif;
-        color: #111827;
+        color: var(--color-gray-900);
+        line-height: 1.5; /* 统一行高 */
     }
     
-    /* 调整顶部间距，给按钮留出空间 */
-    .block-container { padding-top: 1rem; }
+    /* 调整顶部间距 */
+    .block-container { 
+        padding-top: 1rem; 
+        max-width: 1200px !important; /* 限制最大宽度，提升阅读体验 */
+    }
     
     /* 隐藏 Streamlit 自带元素 */
     #MainMenu, footer, header {visibility: hidden;}
     .stDeployButton {display: none;}
 
     /* ----------------------
-       按钮样式 (统一风格)
+       按钮样式 (现代简洁风格)
        ---------------------- */
     /* 1. Streamlit 原生按钮 (语言切换) */
     .stButton > button {
         background-color: white !important;
-        color: #111 !important;
-        border: 1px solid #e5e7eb !important;
+        color: var(--color-gray-800) !important;
+        border: 1px solid var(--color-gray-200) !important;
         border-radius: 8px !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
+        font-weight: var(--font-semibold) !important;
+        font-size: var(--text-sm) !important;
         padding: 6px 14px !important;
-        transition: all 0.2s !important;
+        transition: all 0.2s ease !important;
         height: auto !important;
         min-height: 0px !important;
         line-height: 1.5 !important;
-        width: 100%; /* 填满列宽 */
+        width: 100%;
+        box-shadow: none !important;
     }
     .stButton > button:hover {
-        background-color: #f9fafb !important;
-        border-color: #111 !important;
+        background-color: var(--color-gray-50) !important;
+        border-color: var(--color-gray-300) !important;
         transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
     }
 
-    /* 2. HTML 链接按钮 (Get New Apps) */
+    /* 2. HTML 链接按钮 */
     .neal-btn {
-        font-family: 'Inter', sans-serif;
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        color: #111;
-        font-weight: 600;
-        font-size: 14px;
+        background: white;
+        border: 1px solid var(--color-gray-200);
+        color: var(--color-gray-800);
+        font-weight: var(--font-semibold);
+        font-size: var(--text-sm);
         padding: 8px 16px;
         border-radius: 8px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         white-space: nowrap;
         text-decoration: none !important;
         width: 100%;
-        height: 38px; /* 强制与 st.button 高度对齐 */
+        height: 38px;
+        box-shadow: none;
     }
     .neal-btn:hover {
-        background: #f9fafb;
-        border-color: #111;
+        background: var(--color-gray-50);
+        border-color: var(--color-gray-300);
         transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    .neal-btn-link { text-decoration: none; width: 100%; display: block; }
+    .neal-btn-link { 
+        text-decoration: none; 
+        width: 100%; 
+        display: block; 
+    }
 
-    /* 标题与卡片样式 */
+    /* 标题样式 - 现代层次感 */
     .main-title {
-        text-align: center; font-size: 4rem; font-weight: 900;
-        margin-bottom: 10px; margin-top: -20px; /* 因为上面有按钮列，把标题往上拉一点 */
-        letter-spacing: -2px; color: #111;
+        text-align: center; 
+        font-size: var(--text-5xl); 
+        font-weight: var(--font-black);
+        margin-bottom: 8px; 
+        margin-top: -20px;
+        letter-spacing: -0.05em !important; /* 标题字间距更紧凑 */
+        color: var(--color-gray-900);
+        line-height: 1.1; /* 标题行高更紧凑 */
     }
     .subtitle {
-        text-align: center; font-size: 1.25rem; color: #6B7280;
-        margin-bottom: 50px; font-weight: 400;
+        text-align: center; 
+        font-size: var(--text-lg); 
+        color: var(--color-gray-500);
+        margin-bottom: 40px; 
+        font-weight: var(--font-regular);
+        line-height: 1.4;
     }
     
-    /* 卡片网格 */
-    .card-link { text-decoration: none; color: inherit; display: block; margin-bottom: 20px; }
+    /* 卡片样式 - 现代简洁 */
+    .card-link { 
+        text-decoration: none; 
+        color: inherit; 
+        display: block; 
+        margin-bottom: 16px; /* 减少卡片间距 */
+    }
     .neal-card {
-        background-color: #FFFFFF; border-radius: 16px; padding: 24px;
-        height: 110px; width: 100%; border: 1px solid #E5E7EB;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        display: flex; flex-direction: row; align-items: center; gap: 16px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: white; 
+        border-radius: 12px; /* 更圆润的边角 */
+        padding: 20px;
+        height: 100px; 
+        width: 100%; 
+        border: 1px solid var(--color-gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); /* 更轻微的阴影 */
+        display: flex; 
+        flex-direction: row; 
+        align-items: center; 
+        gap: 16px;
+        transition: all 0.2s ease;
     }
     .neal-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1); border-color: #d1d5db;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); 
+        border-color: var(--color-gray-300);
     }
-    .card-icon { font-size: 36px; flex-shrink: 0; }
-    .card-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #111; }
-    .card-desc { font-size: 14px; color: #6B7280; line-height: 1.4; }
+    .card-icon { 
+        font-size: 32px; 
+        flex-shrink: 0; 
+    }
+    .card-title { 
+        font-size: var(--text-lg); 
+        font-weight: var(--font-bold); 
+        margin-bottom: 2px; 
+        color: var(--color-gray-900);
+        line-height: 1.2;
+    }
+    .card-desc { 
+        font-size: var(--text-sm); 
+        color: var(--color-gray-500); 
+        line-height: 1.3;
+    }
 
-    /* Footer 样式 */
+    /* Footer 样式 - 现代简洁 */
     .footer-area {
-        max-width: 800px; margin: 80px auto 40px; padding-top: 40px;
-        border-top: 1px solid #f3f4f6; text-align: center;
-        display: flex; flex-direction: column; align-items: center;
+        max-width: 700px; 
+        margin: 60px auto 40px; 
+        padding-top: 32px;
+        border-top: 1px solid var(--color-gray-100); 
+        text-align: center;
+        display: flex; 
+        flex-direction: column; 
+        align-items: center;
     }
-    .footer-title { font-weight: 800; font-size: 1.5rem; margin-bottom: 10px; }
-    .footer-text { color: #6B7280; font-size: 15px; line-height: 1.6; max-width: 500px; margin-bottom: 30px; }
-    .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; width: 100%; }
+    .footer-title { 
+        font-weight: var(--font-extrabold); 
+        font-size: var(--text-2xl); 
+        margin-bottom: 8px; 
+        color: var(--color-gray-800);
+    }
+    .footer-text { 
+        color: var(--color-gray-500); 
+        font-size: var(--text-base); 
+        line-height: 1.6; 
+        max-width: 500px; 
+        margin-bottom: 24px; 
+    }
+    .footer-links { 
+        display: flex; 
+        flex-wrap: wrap; 
+        justify-content: center; 
+        gap: 12px; 
+        width: 100%; 
+    }
+    .footer-creator {
+        color: var(--color-gray-400); 
+        font-size: var(--text-sm);
+        margin-top: 16px;
+    }
 
     /* 浇水彩蛋 */
-    .plant-container { position: fixed; bottom: 20px; right: 20px; text-align: center; z-index: 999; }
+    .plant-container { 
+        position: fixed; 
+        bottom: 20px; 
+        right: 20px; 
+        text-align: center; 
+        z-index: 999; 
+    }
     .water-bubble {
-        background: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 6px; opacity: 0; transition: opacity 0.3s;
+        background: white; 
+        padding: 6px 10px; 
+        border-radius: 8px; 
+        font-size: var(--text-xs); 
+        font-weight: var(--font-semibold);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        margin-bottom: 6px; 
+        opacity: 0; 
+        transition: opacity 0.3s;
+        color: var(--color-gray-700);
     }
     .show-bubble { opacity: 1; }
-    .plant-emoji { font-size: 50px; cursor: pointer; transition: transform 0.2s; }
-    .plant-emoji:hover { transform: scale(1.1); }
+    .plant-emoji { 
+        font-size: 48px; 
+        cursor: pointer; 
+        transition: transform 0.2s ease; 
+    }
+    .plant-emoji:hover { transform: scale(1.08); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -202,20 +333,19 @@ st.markdown("""
 # ==========================================
 def render_home():
     # ----------------------------------------------------
-    # 1. 顶部按钮行 (使用 Columns 布局，稳定可靠)
+    # 1. 顶部按钮行
     # ----------------------------------------------------
-    # 布局逻辑：[ 空白占位符 (8份) ] | [ 语言按钮 (1份) ] | [ Get App 链接 (1.5份) ]
     c_spacer, c_lang, c_link = st.columns([10, 1.2, 1.8])
     
     with c_lang:
-        # Streamlit 原生按钮，用于 Python 逻辑切换
+        # 语言切换按钮
         lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
         if st.button(lang_btn_text, key="lang_switch_main"):
             st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
             st.rerun()
 
     with c_link:
-        # HTML 链接按钮
+        # 右上角链接按钮
         st.markdown(f"""
         <a href="https://neal.fun/newsletter/" target="_blank" class="neal-btn-link">
             <button class="neal-btn">{current_text['top_right_btn']}</button>
@@ -255,8 +385,7 @@ def render_home():
             <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
             <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn3']}</button></a>
         </div>
-        <br><br>
-        <div style="color: #9CA3AF; font-size: 14px;">{current_text['footer_creator']}</div>
+        <div class="footer-creator">{current_text['footer_creator']}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -270,7 +399,7 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # 隐形浇水触发器 (页面底部第二个 st.button)
+    # 隐形浇水触发器
     c1, c2 = st.columns([10, 1])
     with c2:
         if st.button("💧"):
