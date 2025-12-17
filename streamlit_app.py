@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import random
+import hashlib
 
 # ==========================================
 # 1. 全局配置
@@ -340,13 +341,13 @@ st.markdown("""
     }
     .plant-emoji:hover { transform: scale(1.08); }
     
-    /* 隐藏的点击按钮 */
-    .hidden-click-btn {
+    /* 隐藏元素 */
+    .hidden-element {
+        height: 0;
+        width: 0;
+        overflow: hidden;
+        visibility: hidden;
         position: absolute;
-        opacity: 0;
-        width: 1px;
-        height: 1px;
-        pointer-events: none;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -354,6 +355,10 @@ st.markdown("""
 # ==========================================
 # 4. 工具函数
 # ==========================================
+def generate_safe_key(text):
+    """生成安全的按钮key（避免特殊字符）"""
+    return hashlib.md5(text.encode()).hexdigest()[:10]
+
 def get_button_click_count(button_id):
     """获取按钮点击次数"""
     return st.session_state.button_clicks.get(button_id, 0)
@@ -383,11 +388,23 @@ def render_home():
     with c_link:
         # 右上角链接按钮 - 添加点击计数
         top_btn_id = "top_right_btn"
-        if st.button(current_text['top_right_btn'], key=f"btn_{top_btn_id}", use_container_width=True):
+        top_btn_key = generate_safe_key(top_btn_id)
+        
+        # 创建隐藏的按钮容器
+        st.markdown('<div class="hidden-element">', unsafe_allow_html=True)
+        if st.button(" ", key=f"btn_{top_btn_key}"):
             increment_button_click(top_btn_id)
             # 在新标签页打开链接
             js = f"window.open('https://neal.fun/newsletter/', '_blank')"
             st.components.v1.html(f"<script>{js}</script>", height=0)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # 显示美观的按钮
+        st.markdown(f"""
+        <a href="javascript:document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"btn_{top_btn_key}\"]').click()" class="neal-btn-link">
+            <button class="neal-btn">{current_text['top_right_btn']}</button>
+        </a>
+        """, unsafe_allow_html=True)
 
     # ----------------------------------------------------
     # 2. 页面主体
@@ -400,23 +417,25 @@ def render_home():
     cols = st.columns(3)
     for idx, (title, desc, icon, url) in enumerate(current_text['games']):
         with cols[idx % 3]:
-            # 生成唯一的按钮ID
-            button_id = f"game_btn_{idx}_{title.replace(' ', '_')}"
+            # 生成唯一的按钮ID和安全的key
+            button_id = f"game_btn_{idx}_{title}"
+            btn_key = generate_safe_key(button_id)
             # 获取点击次数
             click_count = get_button_click_count(button_id)
             
-            # 创建点击按钮（隐藏）
-            btn_key = f"hidden_btn_{button_id}"
-            if st.button(f"Click {title}", key=btn_key, class_="hidden-click-btn"):
+            # 创建隐藏的点击按钮
+            st.markdown('<div class="hidden-element">', unsafe_allow_html=True)
+            if st.button(" ", key=f"hidden_{btn_key}"):
                 increment_button_click(button_id)
                 # 在新标签页打开链接
                 js = f"window.open('{url}', '_blank')"
                 st.components.v1.html(f"<script>{js}</script>", height=0)
+            st.markdown('</div>', unsafe_allow_html=True)
             
             # 显示卡片，点击时触发隐藏按钮
             click_count_text = current_text['click_count'].format(count=click_count)
             st.markdown(f"""
-            <a href="javascript:document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"{btn_key}\"]').click()" class="card-link">
+            <a href="javascript:document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"hidden_{btn_key}\"]').click()" class="card-link">
                 <div class="neal-card">
                     <div class="card-icon">{icon}</div>
                     <div class="card-content">
@@ -429,18 +448,43 @@ def render_home():
             """, unsafe_allow_html=True)
 
     # Footer 区域
-    st.markdown(f"""
+    footer_html = f"""
     <div class="footer-area">
         <div class="footer-title">{current_text['footer_title']}</div>
         <div class="footer-text">{current_text['footer_text']}</div>
         <div class="footer-links">
-            {render_footer_button("footer_btn1", current_text['footer_btn1'], "https://neal.fun/newsletter/")}
-            {render_footer_button("footer_btn2", current_text['footer_btn2'], "https://twitter.com/nealagarwal")}
-            {render_footer_button("footer_btn3", current_text['footer_btn3'], "https://buymeacoffee.com/nealagarwal")}
+    """
+    
+    # 渲染页脚按钮
+    footer_buttons = [
+        ("footer_btn1", current_text['footer_btn1'], "https://neal.fun/newsletter/"),
+        ("footer_btn2", current_text['footer_btn2'], "https://twitter.com/nealagarwal"),
+        ("footer_btn3", current_text['footer_btn3'], "https://buymeacoffee.com/nealagarwal")
+    ]
+    
+    for btn_id, btn_text, url in footer_buttons:
+        # 创建隐藏按钮
+        btn_key = generate_safe_key(btn_id)
+        st.markdown('<div class="hidden-element">', unsafe_allow_html=True)
+        if st.button(" ", key=f"footer_{btn_key}"):
+            increment_button_click(btn_id)
+            js = f"window.open('{url}', '_blank')"
+            st.components.v1.html(f"<script>{js}</script>", height=0)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # 添加到footer HTML
+        footer_html += f"""
+        <a href="javascript:document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"footer_{btn_key}\"]').click()" style="text-decoration:none">
+            <button class="neal-btn">{btn_text}</button>
+        </a>
+        """
+    
+    footer_html += f"""
         </div>
         <div class="footer-creator">{current_text['footer_creator']}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(footer_html, unsafe_allow_html=True)
 
     # 浇水彩蛋
     water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
@@ -455,38 +499,10 @@ def render_home():
     # 隐形浇水触发器
     c1, c2 = st.columns([10, 1])
     with c2:
-        if st.button("💧"):
+        if st.button("💧", key="water_button"):
             st.session_state.water_count += 1
             st.session_state.trigger_water = True
             st.rerun()
-
-def render_footer_button(btn_id, btn_text, url):
-    """渲染页脚按钮（带点击计数）"""
-    # 生成唯一key
-    btn_key = f"footer_btn_{btn_id}"
-    
-    # 创建隐藏按钮
-    hidden_html = f"""
-    <button class="hidden-click-btn" id="hidden_{btn_key}" onclick="
-        document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"{btn_key}\"]').click();
-    "></button>
-    """
-    
-    # 显示按钮
-    button_html = f"""
-    {hidden_html}
-    <a href="javascript:document.getElementById('hidden_{btn_key}').click()" style="text-decoration:none">
-        <button class="neal-btn">{btn_text}</button>
-    </a>
-    """
-    
-    # 在Python端处理点击事件
-    if st.button(btn_text, key=btn_key, class_="hidden-click-btn"):
-        increment_button_click(btn_id)
-        js = f"window.open('{url}', '_blank')"
-        st.components.v1.html(f"<script>{js}</script>", height=0)
-    
-    return button_html
 
 # ==========================================
 # 6. 调试面板（可选）
