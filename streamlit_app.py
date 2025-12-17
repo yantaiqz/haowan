@@ -201,6 +201,17 @@ st.markdown("""
     /* 隐藏 Streamlit 自带元素 */
     #MainMenu, footer, header {visibility: hidden;}
     .stDeployButton {display: none;}
+    
+    /* 隐藏按钮的样式 */
+    .hidden-button {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        opacity: 0;
+        pointer-events: none;
+        width: 1px;
+        height: 1px;
+    }
 
     /* ----------------------
        按钮样式 (现代简洁风格)
@@ -484,11 +495,13 @@ def render_home():
         </div>
         """, unsafe_allow_html=True)
         
-        # 隐藏的实际按钮
-        if st.button(lang_btn_text, key="lang_switch_btn", visible=False):
+        # 使用CSS隐藏按钮而不是visible=False参数
+        st.markdown('<div class="hidden-button">', unsafe_allow_html=True)
+        if st.button(lang_btn_text, key="lang_switch_btn"):
             record_click("language_switch")
             st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with c_link:
         # 右上角链接按钮（带点击次数标记）
@@ -513,7 +526,9 @@ def render_home():
     
     # 游戏卡片网格（带点击次数标记）
     cols = st.columns(3)
+    app_indices = {}  # 记录应用名称和索引的映射
     for idx, (title, desc, icon, url) in enumerate(current_text['games']):
+        app_indices[title] = idx
         with cols[idx % 3]:
             # 获取该应用的点击次数
             app_clicks = st.session_state.click_stats["apps"].get(title, 0)
@@ -521,7 +536,7 @@ def render_home():
             
             # 卡片链接（带点击记录）
             st.markdown(f"""
-            <div class="card-link" onclick="recordAppClick('{title}')">
+            <div class="card-link" onclick="recordAppClick('{title}', {idx})">
                 <a href="{url}" target="_blank" style="text-decoration: none; color: inherit;">
                     <div class="neal-card">
                         <div class="card-icon">{icon}</div>
@@ -534,13 +549,16 @@ def render_home():
                 </a>
             </div>
             """, unsafe_allow_html=True)
-            
-            # 隐藏按钮用于记录点击
-            if st.button(f"app_click_{title}", key=f"app_btn_{idx}", visible=False):
-                record_click("app", title)
-                # 在新标签页打开链接
-                js = f"window.open('{url}', '_blank')"
-                st.components.v1.html(f"<script>{js}</script>", height=0)
+    
+    # 隐藏的应用点击记录按钮
+    st.markdown('<div class="hidden-button">', unsafe_allow_html=True)
+    for idx, (title, desc, icon, url) in enumerate(current_text['games']):
+        if st.button(f"app_click_{title}", key=f"app_btn_{idx}"):
+            record_click("app", title)
+            # 在新标签页打开链接
+            js = f"window.open('{url}', '_blank')"
+            st.components.v1.html(f"<script>{js}</script>", height=0)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Footer 区域
     st.markdown(f"""
@@ -591,14 +609,21 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # 隐形浇水触发器
-    c1, c2 = st.columns([10, 1])
-    with c2:
-        if st.button("💧", key="water_btn", visible=False):
-            record_click("water_plant")
-            st.session_state.water_count += 1
-            st.session_state.trigger_water = True
-            st.rerun()
+    # 浇水按钮（隐藏）
+    st.markdown('<div class="hidden-button">', unsafe_allow_html=True)
+    if st.button("💧", key="water_btn"):
+        record_click("water_plant")
+        st.session_state.water_count += 1
+        st.session_state.trigger_water = True
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # 外部链接点击记录按钮（隐藏）
+    st.markdown('<div class="hidden-button">', unsafe_allow_html=True)
+    for btn_type in ["newsletter", "twitter", "buy_coffee", "get_new_apps"]:
+        if st.button(f"ext_{btn_type}", key=f"ext_btn_{btn_type}"):
+            record_click(btn_type)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # JavaScript 辅助记录外部链接点击
     st.markdown("""
@@ -609,28 +634,25 @@ def render_home():
         const btnId = `ext_btn_${btnType}`;
         const btn = document.getElementById(btnId);
         if (btn) {
-            btn.click();
+            setTimeout(() => {
+                btn.click();
+            }, 100);
         }
     }
     
     // 记录应用点击
-    function recordAppClick(appName) {
+    function recordAppClick(appName, appIndex) {
         // 找到对应的应用按钮并点击
-        for (let i = 0; i < 20; i++) {
-            const btn = document.getElementById(`app_btn_${i}`);
-            if (btn && btn.innerText.includes(appName)) {
+        const btnId = `app_btn_${appIndex}`;
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            setTimeout(() => {
                 btn.click();
-                break;
-            }
+            }, 100);
         }
     }
     </script>
     """, unsafe_allow_html=True)
-    
-    # 为外部链接创建隐藏按钮
-    for btn_type in ["newsletter", "twitter", "buy_coffee", "get_new_apps"]:
-        if st.button(f"ext_{btn_type}", key=f"ext_btn_{btn_type}", visible=False):
-            record_click(btn_type)
 
 # ==========================================
 # 5. 程序入口
