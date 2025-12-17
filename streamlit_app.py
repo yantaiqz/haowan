@@ -5,32 +5,7 @@ import os
 import streamlit.components.v1 as components
 
 # ==========================================
-# 0. 数据持久化逻辑 (新增)
-# ==========================================
-DATA_FILE = "click_stats.json"
-
-def load_clicks():
-    if not os.path.exists(DATA_FILE):
-        return {}
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_click(url_key):
-    data = load_clicks()
-    # 如果该链接没记录过，初始化为0
-    if url_key not in data:
-        data[url_key] = 0
-    data[url_key] += 1
-    
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-    return data[url_key]
-
-# ==========================================
-# 1. 全局配置与重定向拦截 (关键修改)
+# 1. 基础配置与数据定义
 # ==========================================
 st.set_page_config(
     page_title="AI.找乐子 | AI.Fun",
@@ -39,11 +14,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ------------------------------------------
-# 定义所有链接数据 (移到前面以便拦截逻辑调用)
-# ------------------------------------------
+# 数据文件路径
+DATA_FILE = "click_stats.json"
+
+# 链接数据定义: (Key, 中文标题, 中文描述, 图标, 真实URL)
 GAME_LINKS = [
-    # (Key/ID, 中文标题, 描述, 图标, 真实URL)
     ("wealth", "财富榜", "我能排第几", "💰", "https://youqian.streamlit.app/"),
     ("rabbit", "AI兔子", "一键检测AI内容痕迹", "🐰", "https://aituzi.streamlit.app/"),
     ("buffett", "巴菲特的组合", "伯克希尔·哈撒韦投资组合演变", "📈", "https://buffett.streamlit.app/"),
@@ -55,49 +30,159 @@ GAME_LINKS = [
     ("legal1000", "Legal1000", "全球法律与合规机构导航", "📚", "https://iterms.streamlit.app/"),
 ]
 
-# ------------------------------------------
-# 拦截逻辑：检查 URL 参数
-# ------------------------------------------
-# 获取查询参数 (兼容不同 Streamlit 版本)
-query_params = st.query_params 
+# 英文翻译映射
+EN_TEXTS_MAP = {
+    "wealth": ("Wealth Rankings", "Where do I stand?"),
+    "rabbit": ("AI Rabbit", "One-click AI content detection"),
+    "buffett": ("Buffett's Portfolio", "Evolution of Berkshire Hathaway"),
+    "red": ("Red Stain", "State-owned investments data"),
+    "world_house": ("Global Housing Prices", "Comparison of world city prices"),
+    "cn_house": ("China Housing Market", "Urban housing price trends"),
+    "million": ("Million Investment", "Return comparison of top products"),
+    "lawyer": ("Intl Lawyer", "AI legal consultation worldwide"),
+    "legal1000": ("Legal1000", "Global legal institution navigator"),
+}
+
+# ==========================================
+# 2. 数据读写函数
+# ==========================================
+def load_clicks():
+    if not os.path.exists(DATA_FILE):
+        return {}
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_click(url_key):
+    data = load_clicks()
+    if url_key not in data:
+        data[url_key] = 0
+    data[url_key] += 1
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+    return data[url_key]
+
+# ==========================================
+# 3. 拦截逻辑 (核心修改：必须在UI渲染前执行)
+# ==========================================
+query_params = st.query_params
 
 if "target" in query_params:
-    target_index = int(query_params["target"])
-    
-    if 0 <= target_index < len(GAME_LINKS):
-        key, _, _, _, real_url = GAME_LINKS[target_index]
-        
-        # 1. 记录点击
-        new_count = save_click(key)
-        
-        # 2. 执行 JS 跳转 (使用 window.open 或 window.location)
-        # 注意：meta refresh 也是一种备选，但 JS 更快
-        redirect_html = f"""
-        <script>
-            // 稍微延迟一点点确保文件写入完成（通常不需要，但为了保险）
-            window.top.location.href = "{real_url}";
-        </script>
-        <div style="text-align:center; padding-top: 50px;">
-            <h3>正在跳转... / Redirecting...</h3>
-            <p>已累计点击 / Total Clicks: {new_count}</p>
-        </div>
-        """
-        components.html(redirect_html, height=200)
-        st.stop() # 停止渲染后续页面，专注于跳转
+    try:
+        target_index = int(query_params["target"])
+        if 0 <= target_index < len(GAME_LINKS):
+            key, _, _, _, real_url = GAME_LINKS[target_index]
+            
+            # 1. 记录数据
+            new_count = save_click(key)
+            
+            # 2. 构建强力跳转代码 (JS + Meta Refresh)
+            redirect_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta http-equiv="refresh" content="0;url={real_url}">
+            </head>
+            <body>
+                <script>
+                    window.top.location.href = "{real_url}";
+                </script>
+                <div style="font-family:sans-serif; text-align:center; padding-top:20%; color:#666;">
+                    <h3>Redirecting... / 正在跳转...</h3>
+                    <p>Total Clicks: {new_count}</p>
+                    <p><a href="{real_url}">Click here if not redirected</a></p>
+                </div>
+            </body>
+            </html>
+            """
+            components.html(redirect_html, height=800)
+            
+            # 3. 关键延迟：给浏览器执行 JS 的时间
+            time.sleep(1.0)
+            st.stop()
+            
+    except ValueError:
+        pass
 
 # ==========================================
-# 2. 状态与文本初始化
+# 4. 样式 CSS
 # ==========================================
+st.markdown("""
+<style>
+    :root {
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --color-gray-50: #f9fafb;
+        --color-gray-200: #e5e7eb;
+        --color-gray-500: #6b7280;
+        --color-gray-900: #111827;
+    }
+    * { font-family: var(--font-sans) !important; letter-spacing: -0.02em !important; }
+    .stApp { background-color: #FFFFFF !important; color: var(--color-gray-900); }
+    .block-container { padding-top: 1rem; max-width: 1200px !important; }
+    #MainMenu, footer, header {visibility: hidden;}
+    .stDeployButton {display: none;}
+
+    /* 按钮样式 */
+    .neal-btn {
+        background: white; border: 1px solid var(--color-gray-200); color: #1f2937;
+        font-weight: 600; font-size: 14px; padding: 8px 16px; border-radius: 8px;
+        cursor: pointer; transition: all 0.2s ease; width: 100%; height: 38px;
+    }
+    .neal-btn:hover { background: var(--color-gray-50); transform: translateY(-1px); }
+    .neal-btn-link { text-decoration: none; width: 100%; display: block; }
+    
+    /* 卡片样式 */
+    .card-link { text-decoration: none; color: inherit; display: block; margin-bottom: 16px; }
+    .neal-card {
+        background-color: white; border-radius: 12px; padding: 20px;
+        height: 100px; width: 100%; border: 1px solid var(--color-gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); display: flex; align-items: center; gap: 16px;
+        transition: all 0.2s ease; position: relative;
+    }
+    .neal-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); border-color: #d1d5db; }
+    
+    .card-icon { font-size: 32px; flex-shrink: 0; }
+    .card-title { font-size: 1.125rem; font-weight: 700; color: var(--color-gray-900); line-height: 1.2; margin-bottom: 4px; }
+    .card-desc { font-size: 0.875rem; color: var(--color-gray-500); line-height: 1.3; }
+    
+    /* 点击计数角标 */
+    .click-badge {
+        position: absolute; top: 10px; right: 10px;
+        background-color: #f3f4f6; color: #9ca3af;
+        font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;
+    }
+
+    /* 标题与页脚 */
+    .main-title { text-align: center; font-size: 3rem; font-weight: 900; margin-bottom: 8px; margin-top: -20px; }
+    .subtitle { text-align: center; font-size: 1.125rem; color: var(--color-gray-500); margin-bottom: 40px; }
+    
+    .footer-area { margin: 60px auto 40px; padding-top: 32px; border-top: 1px solid #f3f4f6; text-align: center; }
+    .footer-links { display: flex; gap: 12px; justify-content: center; width: 100%; margin: 16px 0; }
+    .footer-creator { color: #9ca3af; font-size: 0.875rem; margin-top: 16px; }
+    
+    /* 浇水组件 */
+    .plant-container { position: fixed; bottom: 20px; right: 20px; text-align: center; z-index: 999; }
+    .water-bubble { background: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 6px; opacity: 0; transition: opacity 0.3s; }
+    .show-bubble { opacity: 1; }
+    .plant-emoji { font-size: 48px; cursor: pointer; transition: transform 0.2s ease; }
+    .plant-emoji:hover { transform: scale(1.08); }
+</style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 5. 页面逻辑与渲染
+# ==========================================
+# 状态初始化
 if 'water_count' not in st.session_state:
     st.session_state.water_count = 0
 if 'trigger_water' not in st.session_state:
     st.session_state.trigger_water = False
 if 'language' not in st.session_state:
-    st.session_state.language = 'zh' 
+    st.session_state.language = 'zh'
 
-# 加载最新的点击数据用于显示
-current_clicks = load_clicks()
-
+# 语言包
 lang_texts = {
     'zh': {
         'page_title': 'AI.找乐子',
@@ -110,7 +195,6 @@ lang_texts = {
         'footer_btn3': '请杯咖啡 ☕',
         'footer_creator': '老祁走❤️制作',
         'water_bubble': '已浇水 {count} 次',
-        'click_label': '热度'
     },
     'en': {
         'page_title': 'AI.Fun',
@@ -123,79 +207,11 @@ lang_texts = {
         'footer_btn3': 'Buy me a coffee ☕',
         'footer_creator': 'Made with ❤️ by LaoQi',
         'water_bubble': 'Watered {count} times',
-        'click_label': 'Clicks'
     }
 }
-
 current_text = lang_texts[st.session_state.language]
+current_clicks = load_clicks()
 
-# ==========================================
-# 3. 核心 CSS (保持原有优美样式，微调点击数显示)
-# ==========================================
-st.markdown("""
-<style>
-    :root {
-        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        --text-sm: 0.875rem;
-        --text-lg: 1.125rem;
-        --text-5xl: 3rem;
-        --color-gray-50: #f9fafb;
-        --color-gray-200: #e5e7eb;
-        --color-gray-500: #6b7280;
-        --color-gray-900: #111827;
-    }
-    * { font-family: var(--font-sans) !important; letter-spacing: -0.02em !important; }
-    .stApp { background-color: #FFFFFF !important; color: var(--color-gray-900); }
-    .block-container { padding-top: 1rem; max-width: 1200px !important; }
-    #MainMenu, footer, header {visibility: hidden;}
-    .stDeployButton {display: none;}
-
-    /* 按钮与卡片样式 */
-    .neal-btn {
-        background: white; border: 1px solid var(--color-gray-200); color: #1f2937;
-        font-weight: 600; font-size: 14px; padding: 8px 16px; border-radius: 8px;
-        cursor: pointer; transition: all 0.2s ease; width: 100%; height: 38px;
-    }
-    .neal-btn:hover { background: var(--color-gray-50); transform: translateY(-1px); }
-    
-    .card-link { text-decoration: none; color: inherit; display: block; margin-bottom: 16px; }
-    .neal-card {
-        background-color: white; border-radius: 12px; padding: 20px;
-        height: 100px; width: 100%; border: 1px solid var(--color-gray-200);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); display: flex; align-items: center; gap: 16px;
-        transition: all 0.2s ease; position: relative; /* 为了定位点击数 */
-    }
-    .neal-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); }
-    
-    .card-icon { font-size: 32px; flex-shrink: 0; }
-    .card-title { font-size: var(--text-lg); font-weight: 700; color: var(--color-gray-900); line-height: 1.2; }
-    .card-desc { font-size: var(--text-sm); color: var(--color-gray-500); line-height: 1.3; }
-    
-    /* 新增：点击计数样式 */
-    .click-badge {
-        position: absolute; top: 10px; right: 10px;
-        background-color: #f3f4f6; color: #9ca3af;
-        font-size: 10px; padding: 2px 6px; border-radius: 4px;
-        font-weight: 500;
-    }
-
-    .main-title { text-align: center; font-size: var(--text-5xl); font-weight: 900; margin-bottom: 8px; margin-top: -20px; }
-    .subtitle { text-align: center; font-size: var(--text-lg); color: var(--color-gray-500); margin-bottom: 40px; }
-    
-    .footer-area { margin: 60px auto 40px; padding-top: 32px; border-top: 1px solid #f3f4f6; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    .footer-links { display: flex; gap: 12px; justify-content: center; width: 100%; margin: 16px 0; }
-    
-    .plant-container { position: fixed; bottom: 20px; right: 20px; text-align: center; z-index: 999; }
-    .water-bubble { background: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 6px; opacity: 0; transition: opacity 0.3s; }
-    .show-bubble { opacity: 1; }
-    .plant-emoji { font-size: 48px; cursor: pointer; transition: transform 0.2s ease; }
-    .plant-emoji:hover { transform: scale(1.08); }
-</style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 4. 页面渲染逻辑
-# ==========================================
 def render_home():
     # 顶部导航
     c_spacer, c_lang, c_link = st.columns([10, 1.2, 1.8])
@@ -216,39 +232,18 @@ def render_home():
     st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
     
-    # --- 游戏卡片网格 (使用 GAME_LINKS 数据) ---
+    # 卡片网格
     cols = st.columns(3)
-    
-    # 英文模式下，我们需要把 GAME_LINKS 映射成英文文本
-    # 注意：这里为了简化，我直接在 loop 里做中英文判断
-    # 实际项目中建议把 GAME_LINKS 的结构做得更像 lang_texts 那样支持多语言
-    
-    # 英文标题映射 (手动补全英文对应关系)
-    en_titles = [
-        "Wealth Rankings", "AI Rabbit", "Buffett's Portfolio", "Red Stain",
-        "Global Housing Prices", "China Housing Market", "Million-Dollar Investment",
-        "International Lawyer", "Legal1000"
-    ]
-    en_descs = [
-        "Where do I stand?", "One-click AI content detection", "Evolution of Berkshire Hathaway", 
-        "State-owned investments data", "Comparison of world city prices", "Urban housing price trends",
-        "Return comparison of top products", "AI legal consultation worldwide", "Global legal institution navigator"
-    ]
-
-    for idx, (key, zh_title, zh_desc, icon, real_url) in enumerate(GAME_LINKS):
-        # 决定显示的文本
+    for idx, (key, zh_title, zh_desc, icon, _) in enumerate(GAME_LINKS):
+        # 语言处理
         if st.session_state.language == 'zh':
-            title = zh_title
-            desc = zh_desc
+            title, desc = zh_title, zh_desc
         else:
-            title = en_titles[idx]
-            desc = en_descs[idx]
+            title, desc = EN_TEXTS_MAP.get(key, (zh_title, zh_desc))
             
-        # 获取点击数
         click_count = current_clicks.get(key, 0)
         
-        # 构造内部跳转链接：指向自己，但带上 target 参数
-        # target="_self" 强制在当前标签页刷新，触发 Streamlit 重新运行并进入拦截逻辑
+        # 内部跳转链接：target="_self" 强制当前页刷新触发拦截器
         internal_link = f"./?target={idx}"
         
         with cols[idx % 3]:
@@ -268,8 +263,8 @@ def render_home():
     # Footer
     st.markdown(f"""
     <div class="footer-area">
-        <div class="footer-title">{current_text['footer_title']}</div>
-        <div class="footer-text">{current_text['footer_text']}</div>
+        <div style="font-weight:800; font-size:1.5rem; margin-bottom:8px; color:#1f2937;">{current_text['footer_title']}</div>
+        <div style="color:#6b7280; margin-bottom:24px; max-width:500px; margin-left:auto; margin-right:auto;">{current_text['footer_text']}</div>
         <div class="footer-links">
             <a href="#" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn1']}</button></a>
             <a href="#" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
@@ -289,6 +284,7 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
+    # 隐形按钮触发 Python 状态更新
     c1, c2 = st.columns([10, 1])
     with c2:
         if st.button("💧"):
@@ -296,9 +292,11 @@ def render_home():
             st.session_state.trigger_water = True
             st.rerun()
 
+# 运行主程序
 if __name__ == "__main__":
     render_home()
     
+    # 浇水动画重置逻辑
     if st.session_state.trigger_water:
         time.sleep(1.5)
         st.session_state.trigger_water = False
