@@ -20,6 +20,9 @@ if 'trigger_water' not in st.session_state:
 # 初始化语言状态
 if 'language' not in st.session_state:
     st.session_state.language = 'zh' 
+# 初始化按钮点击计数
+if 'button_clicks' not in st.session_state:
+    st.session_state.button_clicks = {}
 
 # ==========================================
 # 2. 多语言文本配置
@@ -36,6 +39,7 @@ lang_texts = {
         'footer_btn3': '请杯咖啡 ☕',
         'footer_creator': '老祁走❤️制作',
         'water_bubble': '已浇水 {count} 次',
+        'click_count': '点击 {count} 次',
         'games': [
             ("财富榜", "我能排第几", "💰", "https://youqian.streamlit.app/"),
             ("AI兔子", "一键检测AI内容痕迹", "🐰", "https://aituzi.streamlit.app/"),
@@ -59,6 +63,7 @@ lang_texts = {
         'footer_btn3': 'Buy me a coffee ☕',
         'footer_creator': 'Made with ❤️ by LaoQi',
         'water_bubble': 'Watered {count} times',
+        'click_count': 'Clicked {count} times',
         'games': [
             ("Wealth Rankings", "Where do I stand?", "💰", "https://youqian.streamlit.app/"),
             ("AI Rabbit", "One-click AI content detection", "🐰", "https://aituzi.streamlit.app/"),
@@ -238,6 +243,7 @@ st.markdown("""
         align-items: center; 
         gap: 16px;
         transition: all 0.2s ease;
+        position: relative;
     }
     .neal-card:hover {
         transform: translateY(-3px);
@@ -259,6 +265,14 @@ st.markdown("""
         font-size: var(--text-sm); 
         color: var(--color-gray-500); 
         line-height: 1.3;
+    }
+    .card-click-count {
+        position: absolute;
+        bottom: 12px;
+        right: 16px;
+        font-size: var(--text-xs);
+        color: var(--color-gray-400);
+        font-weight: var(--font-medium);
     }
 
     /* Footer 样式 - 现代简洁 */
@@ -325,11 +339,33 @@ st.markdown("""
         transition: transform 0.2s ease; 
     }
     .plant-emoji:hover { transform: scale(1.08); }
+    
+    /* 隐藏的点击按钮 */
+    .hidden-click-btn {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. 页面渲染逻辑
+# 4. 工具函数
+# ==========================================
+def get_button_click_count(button_id):
+    """获取按钮点击次数"""
+    return st.session_state.button_clicks.get(button_id, 0)
+
+def increment_button_click(button_id):
+    """增加按钮点击次数"""
+    if button_id not in st.session_state.button_clicks:
+        st.session_state.button_clicks[button_id] = 0
+    st.session_state.button_clicks[button_id] += 1
+
+# ==========================================
+# 5. 页面渲染逻辑
 # ==========================================
 def render_home():
     # ----------------------------------------------------
@@ -345,12 +381,13 @@ def render_home():
             st.rerun()
 
     with c_link:
-        # 右上角链接按钮
-        st.markdown(f"""
-        <a href="https://neal.fun/newsletter/" target="_blank" class="neal-btn-link">
-            <button class="neal-btn">{current_text['top_right_btn']}</button>
-        </a>
-        """, unsafe_allow_html=True)
+        # 右上角链接按钮 - 添加点击计数
+        top_btn_id = "top_right_btn"
+        if st.button(current_text['top_right_btn'], key=f"btn_{top_btn_id}", use_container_width=True):
+            increment_button_click(top_btn_id)
+            # 在新标签页打开链接
+            js = f"window.open('https://neal.fun/newsletter/', '_blank')"
+            st.components.v1.html(f"<script>{js}</script>", height=0)
 
     # ----------------------------------------------------
     # 2. 页面主体
@@ -363,14 +400,30 @@ def render_home():
     cols = st.columns(3)
     for idx, (title, desc, icon, url) in enumerate(current_text['games']):
         with cols[idx % 3]:
+            # 生成唯一的按钮ID
+            button_id = f"game_btn_{idx}_{title.replace(' ', '_')}"
+            # 获取点击次数
+            click_count = get_button_click_count(button_id)
+            
+            # 创建点击按钮（隐藏）
+            btn_key = f"hidden_btn_{button_id}"
+            if st.button(f"Click {title}", key=btn_key, class_="hidden-click-btn"):
+                increment_button_click(button_id)
+                # 在新标签页打开链接
+                js = f"window.open('{url}', '_blank')"
+                st.components.v1.html(f"<script>{js}</script>", height=0)
+            
+            # 显示卡片，点击时触发隐藏按钮
+            click_count_text = current_text['click_count'].format(count=click_count)
             st.markdown(f"""
-            <a href="{url}" target="_blank" class="card-link">
+            <a href="javascript:document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"{btn_key}\"]').click()" class="card-link">
                 <div class="neal-card">
                     <div class="card-icon">{icon}</div>
                     <div class="card-content">
                         <div class="card-title">{title}</div>
                         <div class="card-desc">{desc}</div>
                     </div>
+                    <div class="card-click-count">{click_count_text}</div>
                 </div>
             </a>
             """, unsafe_allow_html=True)
@@ -381,9 +434,9 @@ def render_home():
         <div class="footer-title">{current_text['footer_title']}</div>
         <div class="footer-text">{current_text['footer_text']}</div>
         <div class="footer-links">
-            <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn1']}</button></a>
-            <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
-            <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn3']}</button></a>
+            {render_footer_button("footer_btn1", current_text['footer_btn1'], "https://neal.fun/newsletter/")}
+            {render_footer_button("footer_btn2", current_text['footer_btn2'], "https://twitter.com/nealagarwal")}
+            {render_footer_button("footer_btn3", current_text['footer_btn3'], "https://buymeacoffee.com/nealagarwal")}
         </div>
         <div class="footer-creator">{current_text['footer_creator']}</div>
     </div>
@@ -407,11 +460,55 @@ def render_home():
             st.session_state.trigger_water = True
             st.rerun()
 
+def render_footer_button(btn_id, btn_text, url):
+    """渲染页脚按钮（带点击计数）"""
+    # 生成唯一key
+    btn_key = f"footer_btn_{btn_id}"
+    
+    # 创建隐藏按钮
+    hidden_html = f"""
+    <button class="hidden-click-btn" id="hidden_{btn_key}" onclick="
+        document.querySelector('[data-testid=\"stButton\"] button[kind=\"secondary\"][key=\"{btn_key}\"]').click();
+    "></button>
+    """
+    
+    # 显示按钮
+    button_html = f"""
+    {hidden_html}
+    <a href="javascript:document.getElementById('hidden_{btn_key}').click()" style="text-decoration:none">
+        <button class="neal-btn">{btn_text}</button>
+    </a>
+    """
+    
+    # 在Python端处理点击事件
+    if st.button(btn_text, key=btn_key, class_="hidden-click-btn"):
+        increment_button_click(btn_id)
+        js = f"window.open('{url}', '_blank')"
+        st.components.v1.html(f"<script>{js}</script>", height=0)
+    
+    return button_html
+
 # ==========================================
-# 5. 程序入口
+# 6. 调试面板（可选）
+# ==========================================
+def show_click_stats():
+    """显示点击统计（可隐藏）"""
+    with st.expander("📊 点击统计（管理员面板）", expanded=False):
+        st.write("按钮点击次数统计：")
+        for btn_id, count in st.session_state.button_clicks.items():
+            st.write(f"- {btn_id}: {count} 次")
+        
+        # 总计
+        total_clicks = sum(st.session_state.button_clicks.values())
+        st.write(f"\n**总计点击次数**: {total_clicks}")
+        st.write(f"**浇水次数**: {st.session_state.water_count}")
+
+# ==========================================
+# 7. 程序入口
 # ==========================================
 if __name__ == "__main__":
     render_home()
+    show_click_stats()  # 显示点击统计面板
     
     if st.session_state.trigger_water:
         time.sleep(1.5)
