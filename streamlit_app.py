@@ -20,9 +20,9 @@ st.set_page_config(
 # 点击记录文件路径
 CLICK_LOG_FILE = "app_click_stats.json"
 
-# 初始化点击统计状态
-if 'click_stats' not in st.session_state:
-    # 默认统计结构
+# 安全初始化点击统计状态
+def init_click_stats():
+    """安全初始化点击统计数据，确保所有必要的键都存在"""
     default_stats = {
         "language_switch": 0,
         "get_new_apps": 0,
@@ -30,19 +30,35 @@ if 'click_stats' not in st.session_state:
         "newsletter": 0,
         "twitter": 0,
         "buy_coffee": 0,
-        "apps": {},  # 存储每个应用的点击次数
+        "apps": {},  # 确保apps键存在
         "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     
-    # 从文件加载历史记录（如果存在）
+    # 如果session中没有，初始化
+    if 'click_stats' not in st.session_state:
+        st.session_state.click_stats = default_stats.copy()
+    
+    # 从文件加载历史记录（安全加载）
     if os.path.exists(CLICK_LOG_FILE):
         try:
             with open(CLICK_LOG_FILE, 'r', encoding='utf-8') as f:
-                st.session_state.click_stats = json.load(f)
-        except:
-            st.session_state.click_stats = default_stats
+                loaded_stats = json.load(f)
+                # 合并加载的数据，确保所有默认键都存在
+                for key in default_stats.keys():
+                    if key not in loaded_stats:
+                        loaded_stats[key] = default_stats[key]
+                # 特别确保apps是字典类型
+                if not isinstance(loaded_stats.get("apps"), dict):
+                    loaded_stats["apps"] = {}
+                st.session_state.click_stats = loaded_stats
+        except Exception as e:
+            print(f"加载点击统计失败: {e}")
+            st.session_state.click_stats = default_stats.copy()
     else:
-        st.session_state.click_stats = default_stats
+        st.session_state.click_stats = default_stats.copy()
+
+# 执行初始化
+init_click_stats()
 
 # 初始化其他状态
 if 'water_count' not in st.session_state:
@@ -55,25 +71,42 @@ if 'language' not in st.session_state:
 # 保存点击统计到文件
 def save_click_stats():
     try:
-        st.session_state.click_stats["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # 确保保存前数据结构完整
+        if 'click_stats' not in st.session_state:
+            return
+        stats = st.session_state.click_stats
+        stats["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # 确保apps键存在且为字典
+        if "apps" not in stats or not isinstance(stats["apps"], dict):
+            stats["apps"] = {}
         with open(CLICK_LOG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(st.session_state.click_stats, f, ensure_ascii=False, indent=2)
+            json.dump(stats, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"保存点击统计失败: {e}")
 
-# 记录点击次数
+# 记录点击次数（安全版本）
 def record_click(click_type, app_name=None):
     """
-    记录点击次数
+    记录点击次数（安全版本）
     :param click_type: 点击类型 (language_switch, get_new_apps, water_plant, newsletter, twitter, buy_coffee, app)
     :param app_name: 应用名称（仅app类型需要）
     """
+    # 确保click_stats存在
+    if 'click_stats' not in st.session_state:
+        init_click_stats()
+    
+    stats = st.session_state.click_stats
+    
+    # 确保apps键存在
+    if "apps" not in stats:
+        stats["apps"] = {}
+    
     if click_type == "app" and app_name:
-        if app_name not in st.session_state.click_stats["apps"]:
-            st.session_state.click_stats["apps"][app_name] = 0
-        st.session_state.click_stats["apps"][app_name] += 1
-    elif click_type in st.session_state.click_stats:
-        st.session_state.click_stats[click_type] += 1
+        if app_name not in stats["apps"]:
+            stats["apps"][app_name] = 0
+        stats["apps"][app_name] += 1
+    elif click_type in stats:
+        stats[click_type] += 1
     
     # 保存到文件
     save_click_stats()
@@ -475,6 +508,25 @@ st.markdown("""
 # 4. 页面渲染逻辑
 # ==========================================
 def render_home():
+    # 安全获取点击统计数据
+    def safe_get_click_count(click_type, app_name=None):
+        """安全获取点击次数，防止KeyError"""
+        try:
+            if 'click_stats' not in st.session_state:
+                return 0
+            
+            stats = st.session_state.click_stats
+            
+            # 获取应用点击次数
+            if click_type == "app" and app_name:
+                apps = stats.get("apps", {})
+                return apps.get(app_name, 0)
+            
+            # 获取其他类型点击次数
+            return stats.get(click_type, 0)
+        except:
+            return 0
+    
     # ----------------------------------------------------
     # 1. 顶部按钮行
     # ----------------------------------------------------
@@ -483,7 +535,7 @@ def render_home():
     with c_lang:
         # 语言切换按钮（带点击次数标记）
         lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
-        lang_clicks = st.session_state.click_stats["language_switch"]
+        lang_clicks = safe_get_click_count("language_switch")
         click_badge = f'<span class="click-badge">{lang_clicks}</span>' if lang_clicks > 0 else ""
         
         st.markdown(f"""
@@ -495,7 +547,7 @@ def render_home():
         </div>
         """, unsafe_allow_html=True)
         
-        # 使用CSS隐藏按钮而不是visible=False参数
+        # 使用CSS隐藏按钮
         st.markdown('<div class="hidden-button">', unsafe_allow_html=True)
         if st.button(lang_btn_text, key="lang_switch_btn"):
             record_click("language_switch")
@@ -505,7 +557,7 @@ def render_home():
 
     with c_link:
         # 右上角链接按钮（带点击次数标记）
-        new_app_clicks = st.session_state.click_stats["get_new_apps"]
+        new_app_clicks = safe_get_click_count("get_new_apps")
         click_badge = f'<span class="click-badge">{new_app_clicks}</span>' if new_app_clicks > 0 else ""
         
         st.markdown(f"""
@@ -530,8 +582,8 @@ def render_home():
     for idx, (title, desc, icon, url) in enumerate(current_text['games']):
         app_indices[title] = idx
         with cols[idx % 3]:
-            # 获取该应用的点击次数
-            app_clicks = st.session_state.click_stats["apps"].get(title, 0)
+            # 安全获取该应用的点击次数
+            app_clicks = safe_get_click_count("app", title)
             click_badge = f'<span class="card-click-badge">{app_clicks}</span>' if app_clicks > 0 else ""
             
             # 卡片链接（带点击记录）
@@ -571,7 +623,7 @@ def render_home():
                 <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none" onclick="recordExternalClick('newsletter')">
                     <button class="neal-btn">{current_text['footer_btn1']}</button>
                 </a>
-                {f'<span class="click-badge">{st.session_state.click_stats["newsletter"]}</span>' if st.session_state.click_stats["newsletter"] > 0 else ""}
+                {f'<span class="click-badge">{safe_get_click_count("newsletter")}</span>' if safe_get_click_count("newsletter") > 0 else ""}
             </div>
             
             <!-- 视频号/Twitter按钮 -->
@@ -579,7 +631,7 @@ def render_home():
                 <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none" onclick="recordExternalClick('twitter')">
                     <button class="neal-btn">{current_text['footer_btn2']}</button>
                 </a>
-                {f'<span class="click-badge">{st.session_state.click_stats["twitter"]}</span>' if st.session_state.click_stats["twitter"] > 0 else ""}
+                {f'<span class="click-badge">{safe_get_click_count("twitter")}</span>' if safe_get_click_count("twitter") > 0 else ""}
             </div>
             
             <!-- 请咖啡按钮 -->
@@ -587,7 +639,7 @@ def render_home():
                 <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none" onclick="recordExternalClick('buy_coffee')">
                     <button class="neal-btn">{current_text['footer_btn3']}</button>
                 </a>
-                {f'<span class="click-badge">{st.session_state.click_stats["buy_coffee"]}</span>' if st.session_state.click_stats["buy_coffee"] > 0 else ""}
+                {f'<span class="click-badge">{safe_get_click_count("buy_coffee")}</span>' if safe_get_click_count("buy_coffee") > 0 else ""}
             </div>
         </div>
         <div class="footer-creator">{current_text['footer_creator']}</div>
@@ -597,7 +649,7 @@ def render_home():
     # 浇水彩蛋（带点击次数标记）
     water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
     bubble_class = "show-bubble" if st.session_state.trigger_water else ""
-    water_clicks = st.session_state.click_stats["water_plant"]
+    water_clicks = safe_get_click_count("water_plant")
     water_badge = f'<span class="plant-click-badge">{water_clicks}</span>' if water_clicks > 0 else ""
     
     st.markdown(f"""
