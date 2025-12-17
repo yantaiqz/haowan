@@ -1,8 +1,6 @@
 import streamlit as st
 import time
-import json
-from datetime import datetime
-import webbrowser
+import random
 
 # ==========================================
 # 1. 全局配置
@@ -14,135 +12,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ==========================================
-# 2. 点击次数跟踪功能
-# ==========================================
-def init_click_counts():
-    """初始化所有按钮的点击次数"""
-    if 'click_counts' not in st.session_state:
-        # 获取所有URL（包括两种语言的）
-        all_urls = set()
-        for lang in ['zh', 'en']:
-            for _, _, _, url in lang_texts[lang]['games']:
-                all_urls.add(url)
-        
-        # 初始化点击次数
-        st.session_state.click_counts = {}
-        for url in all_urls:
-            st.session_state.click_counts[url] = {
-                'count': 0,
-                'last_clicked': None,
-                'app_name': get_app_name_by_url(url)
-            }
-        
-        # 初始化点击历史记录
-        st.session_state.click_history = []
-
-def get_app_name_by_url(url):
-    """根据URL获取应用名称"""
-    for lang in ['zh', 'en']:
-        for title, desc, icon, app_url in lang_texts[lang]['games']:
-            if app_url == url:
-                return f"{icon} {title}"
-    return "未知应用"
-
-def record_click(url):
-    """记录按钮点击"""
-    if url not in st.session_state.click_counts:
-        st.session_state.click_counts[url] = {
-            'count': 0,
-            'last_clicked': None,
-            'app_name': get_app_name_by_url(url)
-        }
-    
-    # 更新点击次数
-    st.session_state.click_counts[url]['count'] += 1
-    st.session_state.click_counts[url]['last_clicked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # 记录点击历史
-    st.session_state.click_history.append({
-        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        'url': url,
-        'app_name': st.session_state.click_counts[url]['app_name'],
-        'language': st.session_state.language
-    })
-    
-    # 限制历史记录长度
-    if len(st.session_state.click_history) > 100:
-        st.session_state.click_history = st.session_state.click_history[-100:]
-    
-    # 保存到本地文件（可选）
-    save_click_data()
-    
-    # 打开链接
-    webbrowser.open_new_tab(url)
-    st.session_state.open_url = url
-
-def save_click_data():
-    """保存点击数据到文件"""
-    try:
-        data = {
-            'click_counts': st.session_state.click_counts,
-            'click_history': st.session_state.click_history[-50:],  # 只保存最近50条
-            'last_updated': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        with open('click_data.json', 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"保存数据失败: {e}")
-
-def load_click_data():
-    """从文件加载点击数据"""
-    try:
-        with open('click_data.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if 'click_counts' in data:
-                st.session_state.click_counts = data['click_counts']
-            if 'click_history' in data:
-                st.session_state.click_history = data['click_history']
-    except FileNotFoundError:
-        print("未找到历史数据文件，将创建新的记录")
-    except Exception as e:
-        print(f"加载数据失败: {e}")
-
-def show_click_stats():
-    """显示点击统计信息（管理员视图）"""
-    if st.sidebar.checkbox("显示点击统计", key="show_stats"):
-        st.sidebar.markdown("### 📊 点击统计")
-        
-        # 按点击次数排序
-        sorted_counts = sorted(
-            st.session_state.click_counts.items(),
-            key=lambda x: x[1]['count'],
-            reverse=True
-        )
-        
-        # 显示前10个
-        for i, (url, data) in enumerate(sorted_counts[:10]):
-            app_name = data['app_name']
-            count = data['count']
-            last_clicked = data.get('last_clicked', '从未')
-            
-            st.sidebar.markdown(f"""
-            **{i+1}. {app_name}**
-            - 点击次数: **{count}** 次
-            - 最后点击: {last_clicked}
-            """)
-        
-        # 显示总计
-        total_clicks = sum(data['count'] for data in st.session_state.click_counts.values())
-        st.sidebar.markdown(f"**总计点击次数:** {total_clicks} 次")
-        
-        # 显示最近点击历史
-        if st.sidebar.checkbox("显示最近点击历史"):
-            st.sidebar.markdown("### 📋 最近点击")
-            for item in reversed(st.session_state.click_history[-10:]):
-                st.sidebar.markdown(f"**{item['app_name']}**")
-                st.sidebar.markdown(f"时间: {item['timestamp']}")
-                st.sidebar.markdown("---")
+# 初始化状态
+if 'water_count' not in st.session_state:
+    st.session_state.water_count = 0
+if 'trigger_water' not in st.session_state:
+    st.session_state.trigger_water = False
+# 初始化语言状态
+if 'language' not in st.session_state:
+    st.session_state.language = 'zh' 
 
 # ==========================================
-# 3. 多语言文本配置
+# 2. 多语言文本配置
 # ==========================================
 lang_texts = {
     'zh': {
@@ -193,33 +73,10 @@ lang_texts = {
     }
 }
 
-# ==========================================
-# 4. 初始化状态
-# ==========================================
-# 初始化语言状态
-if 'language' not in st.session_state:
-    st.session_state.language = 'zh'
-
-# 初始化浇水状态
-if 'water_count' not in st.session_state:
-    st.session_state.water_count = 0
-if 'trigger_water' not in st.session_state:
-    st.session_state.trigger_water = False
-
-# 初始化打开URL状态
-if 'open_url' not in st.session_state:
-    st.session_state.open_url = None
-
-# 初始化点击次数
-init_click_counts()
-
-# 尝试加载历史数据
-load_click_data()
-
 current_text = lang_texts[st.session_state.language]
 
 # ==========================================
-# 5. 核心 CSS (现代字体优化版)
+# 3. 核心 CSS (现代字体优化版)
 # ==========================================
 st.markdown("""
 <style>
@@ -341,65 +198,6 @@ st.markdown("""
         display: block; 
     }
 
-    /* 3. 游戏卡片按钮样式 */
-    .card-button {
-        background-color: white; 
-        border-radius: 12px; /* 更圆润的边角 */
-        padding: 20px;
-        height: 100px; 
-        width: 100%; 
-        border: 1px solid var(--color-gray-200);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); /* 更轻微的阴影 */
-        display: flex; 
-        flex-direction: row; 
-        align-items: center; 
-        gap: 16px;
-        transition: all 0.2s ease;
-        position: relative;
-        cursor: pointer;
-        text-align: left;
-    }
-    .card-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); 
-        border-color: var(--color-gray-300);
-    }
-    
-    .card-click-counter {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        font-size: var(--text-xs);
-        padding: 2px 6px;
-        border-radius: 10px;
-        font-weight: var(--font-semibold);
-        z-index: 10;
-        opacity: 0.8;
-        transition: opacity 0.2s;
-    }
-    .card-button:hover .card-click-counter {
-        opacity: 1;
-    }
-    
-    .card-icon { 
-        font-size: 32px; 
-        flex-shrink: 0; 
-    }
-    .card-title { 
-        font-size: var(--text-lg); 
-        font-weight: var(--font-bold); 
-        margin-bottom: 2px; 
-        color: var(--color-gray-900);
-        line-height: 1.2;
-    }
-    .card-desc { 
-        font-size: var(--text-sm); 
-        color: var(--color-gray-500); 
-        line-height: 1.3;
-    }
-
     /* 标题样式 - 现代层次感 */
     .main-title {
         text-align: center; 
@@ -420,6 +218,49 @@ st.markdown("""
         line-height: 1.4;
     }
     
+    /* 卡片样式 - 现代简洁 */
+    .card-link { 
+        text-decoration: none; 
+        color: inherit; 
+        display: block; 
+        margin-bottom: 16px; /* 减少卡片间距 */
+    }
+    .neal-card {
+        background-color: white; 
+        border-radius: 12px; /* 更圆润的边角 */
+        padding: 20px;
+        height: 100px; 
+        width: 100%; 
+        border: 1px solid var(--color-gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); /* 更轻微的阴影 */
+        display: flex; 
+        flex-direction: row; 
+        align-items: center; 
+        gap: 16px;
+        transition: all 0.2s ease;
+    }
+    .neal-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); 
+        border-color: var(--color-gray-300);
+    }
+    .card-icon { 
+        font-size: 32px; 
+        flex-shrink: 0; 
+    }
+    .card-title { 
+        font-size: var(--text-lg); 
+        font-weight: var(--font-bold); 
+        margin-bottom: 2px; 
+        color: var(--color-gray-900);
+        line-height: 1.2;
+    }
+    .card-desc { 
+        font-size: var(--text-sm); 
+        color: var(--color-gray-500); 
+        line-height: 1.3;
+    }
+
     /* Footer 样式 - 现代简洁 */
     .footer-area {
         max-width: 700px; 
@@ -488,9 +329,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 6. 页面渲染逻辑
+# 4. 页面渲染逻辑
 # ==========================================
 def render_home():
+
+   
+    
     # ----------------------------------------------------
     # 1. 顶部按钮行
     # ----------------------------------------------------
@@ -518,33 +362,29 @@ def render_home():
     st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
     
-    # 游戏卡片网格 - 使用按钮代替链接
+    # 游戏卡片网格
     cols = st.columns(3)
     for idx, (title, desc, icon, url) in enumerate(current_text['games']):
         with cols[idx % 3]:
             # 获取该URL的点击次数
             click_count = st.session_state.click_counts.get(url, {}).get('count', 0)
             
-            # 创建卡片按钮
+            # 创建按钮
             if st.button(
-                label="",
-                key=f"card_btn_{idx}",
-                help=f"点击访问: {title}"
+                label=f"{icon} {title}",
+                key=f"btn_{url}",
+                help=desc,
+                use_container_width=True
             ):
                 record_click(url)
+                # 使用JavaScript打开新窗口
+                st.markdown(f'<script>window.open("{url}", "_blank");</script>', unsafe_allow_html=True)
                 st.rerun()
             
-            # 使用HTML渲染卡片内容
-            st.markdown(f"""
-            <div class="card-button" onclick="document.getElementById('card_btn_{idx}').click()">
-                <div class="card-click-counter">👆 {click_count}</div>
-                <div class="card-icon">{icon}</div>
-                <div class="card-content">
-                    <div class="card-title">{title}</div>
-                    <div class="card-desc">{desc}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # 显示描述和点击次数
+            st.caption(f"{desc} • 👆 {click_count}次")
+
+   
 
     # Footer 区域
     st.markdown(f"""
@@ -579,16 +419,11 @@ def render_home():
             st.rerun()
 
 # ==========================================
-# 8. 程序入口
+# 5. 程序入口
 # ==========================================
 if __name__ == "__main__":
-    # 显示点击统计（侧边栏）
-    show_click_stats()
-    
-    # 渲染主页面
     render_home()
     
-    # 处理浇水动画
     if st.session_state.trigger_water:
         time.sleep(1.5)
         st.session_state.trigger_water = False
