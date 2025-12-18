@@ -157,6 +157,23 @@ st.markdown(f"""
     
     /* 侧边浇水彩蛋 */
     .plant-container {{ position: fixed; bottom: 30px; right: 30px; z-index: 100; }}
+
+
+    /* 强制弹窗内所有内容居中 */
+    div.stDialog div[data-testid="stMarkdownContainer"], 
+    .stModal div[data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    /* 弹窗底部按钮的 Neal.fun 样式 */
+    .modal-footer-btn {
+        margin-top: 1.5rem;
+        width: 100%;
+    }
+
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -252,6 +269,8 @@ def render_home():
         if not qr_modal.is_open():
             st.session_state.qrcode_modal_open = False
             st.rerun()
+
+
 
     # 咖啡弹窗
     if st.session_state.coffee_modal_open:
