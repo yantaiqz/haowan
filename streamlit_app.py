@@ -516,7 +516,7 @@ def render_home():
             # 替换为你的公众号永久二维码图片地址
             # 支持：1. 公网URL 2. 本地图片路径（需和脚本同目录）
             st.image(
-                "https://your-qrcode-url.com/wechat-qrcode.png",  # 替换成实际二维码地址
+                "qrcode_for_gh.jpg",  # 替换成实际二维码地址
                 caption=current_text['qrcode_desc'],
                 width=300,
                 use_column_width=False
@@ -540,7 +540,6 @@ def render_home():
             # 放置你的微信支付/赞赏码图片
             # 建议将图片放在项目目录下，命名为 wechat_pay.png
             st.image("wechat_pay.jpg", caption=current_text['coffee_title'], width=280)
-            
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button(current_text.get('close', '关闭'), key="close_coffee"):
                 st.session_state.coffee_modal_open = False
