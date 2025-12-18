@@ -262,12 +262,7 @@ def render_home():
             if st.button("Done", key="close_qr", use_container_width=True):
                 st.session_state.qrcode_modal_open = False
                 st.rerun()
-        
-        # 实时同步 X 按钮状态
-        if not qr_modal.is_open():
-            st.session_state.qrcode_modal_open = False
-            st.rerun()
-
+ 
 
 
     # 咖啡弹窗
@@ -283,11 +278,7 @@ def render_home():
             if st.button("Close", key="close_coffee", use_container_width=True):
                 st.session_state.coffee_modal_open = False
                 st.rerun()
-                
-        # 实时同步 X 按钮状态
-        if not coffee_modal.is_open():
-            st.session_state.coffee_modal_open = False
-            st.rerun()
+
             
     import sqlite3
     import uuid  # <--- 新增导入
