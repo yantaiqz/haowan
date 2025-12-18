@@ -231,28 +231,46 @@ def render_home():
     with f_btns[2]:
         if st.button(current_text['footer_btn3']): st.session_state.coffee_modal_open = True
 
-    # --- 5. 弹窗容器处理 ---
+  # --- 5. 弹窗容器处理 (简洁版) ---
+    
+    # 公众号弹窗
     if st.session_state.qrcode_modal_open:
         with qr_modal.container():
-            st.image("qrcode_for_gh.jpg", width=250)
-            st.markdown(f"<p style='text-align:center; color:#666;'>{current_text['qrcode_desc']}</p>", unsafe_allow_html=True)
-            if st.button("Done", key="close_qr"): 
+            st.image("qrcode_for_gh.jpg", width=220)
+            st.markdown(f"""
+                <div style='text-align:center; margin-top:10px;'>
+                    <b style='font-size:1.1rem; color:#111;'>{current_text['qrcode_title']}</b><br>
+                    <span style='color:#666; font-size:0.9rem;'>{current_text['qrcode_desc']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Done", key="close_qr", use_container_width=True):
                 st.session_state.qrcode_modal_open = False
                 st.rerun()
-
+        
+        # 实时同步 X 按钮状态
         if not qr_modal.is_open():
             st.session_state.qrcode_modal_open = False
-            
+            st.rerun()
+
+    # 咖啡弹窗
     if st.session_state.coffee_modal_open:
         with coffee_modal.container():
-            st.markdown(f"<p style='text-align:center;'>{current_text['coffee_desc']}</p>", unsafe_allow_html=True)
-            st.image("wechat_pay.jpg", width=250)
-            if st.button("Close", key="close_coffee"): 
+            st.markdown(f"""
+                <div style='text-align:center; margin-bottom:15px;'>
+                    <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            st.image("wechat_pay.jpg", width=220)
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Close", key="close_coffee", use_container_width=True):
                 st.session_state.coffee_modal_open = False
                 st.rerun()
-        # 核心修复点：同步 X 按钮关闭状态
+                
+        # 实时同步 X 按钮状态
         if not coffee_modal.is_open():
             st.session_state.coffee_modal_open = False
+            st.rerun()
             
     import sqlite3
     import uuid  # <--- 新增导入
