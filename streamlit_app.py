@@ -34,6 +34,12 @@ if 'qrcode_modal_open' not in st.session_state:
 # ==========================================
 lang_texts = {
     'zh': {
+
+        # 增加到 lang_texts['zh']
+        'coffee_title': '请我喝杯咖啡 ☕',
+        'coffee_desc': '如果这些小工具对你有帮助，欢迎请我喝杯咖啡支持创作！',
+        'coffee_success': '感谢你的支持！',
+
         'page_title': '80后老登的工具箱',
         'subtitle': '守住底裤的的AI网页小应用',
         'top_right_btn': '✨ 获得新应用',
@@ -60,6 +66,12 @@ lang_texts = {
         ]
     },
     'en': {
+        
+        # 增加到 lang_texts['en']
+        'coffee_title': 'Buy me a coffee ☕',
+        'coffee_desc': 'If you find these tools helpful, consider supporting my work!',
+        'coffee_success': 'Thank you for your support!',
+        
         'page_title': 'AI.Fun',
         'subtitle': 'Silly but fun AI web apps',
         'top_right_btn': '✨ Get new apps',
@@ -88,6 +100,9 @@ lang_texts = {
 }
 
 current_text = lang_texts[st.session_state.language]
+
+if 'coffee_modal_open' not in st.session_state:
+    st.session_state.coffee_modal_open = False
 
 # ==========================================
 # 3. 核心 CSS (现代字体优化版)
@@ -355,6 +370,23 @@ st.markdown("""
         color: var(--color-gray-500) !important;
         font-size: var(--text-base) !important;
     }
+
+    /* 在 <style> 标签内添加 */
+    .stButton > button[kind="secondary"] {
+        background: white !important;
+        border: 1px solid var(--color-gray-200) !important;
+        color: var(--color-gray-800) !important;
+        padding: 10px 20px !important;
+        height: 45px !important;
+        width: 100% !important;
+    }
+    
+    /* 弹窗中的图片居中 */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -459,11 +491,12 @@ def track_and_get_stats():
 def render_home():
     # 初始化二维码弹窗（核心修改）
     qrcode_modal = Modal(current_text['qrcode_title'], key="qrcode-modal", max_width=500)
+    coffee_modal = Modal(current_text['coffee_title'], key="coffee-modal", max_width=450)
     
     # ----------------------------------------------------
     # 1. 顶部按钮行
     # ----------------------------------------------------
-    c_spacer, c_lang, c_link = st.columns([8, 2, 2])
+    c_spacer, c_lang, c_link = st.columns([12, 2, 2])
     
     with c_link:
         # 核心修改：替换原有跳转链接的按钮为弹窗触发按钮
@@ -476,7 +509,6 @@ def render_home():
         if st.button(lang_btn_text, key="lang_switch_main"):
             st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
             st.rerun()
-
     
     # 核心修改：弹窗渲染逻辑
     if st.session_state.qrcode_modal_open:
@@ -492,6 +524,26 @@ def render_home():
             # 关闭弹窗按钮
             if st.button("关闭", key="close_qrcode_btn"):
                 st.session_state.qrcode_modal_open = False
+                st.rerun()
+
+    # ==========================================
+    # 核心修改：咖啡弹窗逻辑
+    # ==========================================
+    if st.session_state.coffee_modal_open:
+        with coffee_modal.container():
+            st.markdown(f"""
+                <div style="text-align: center; padding: 20px;">
+                    <p style="font-size: 1.1rem; color: #666; margin-bottom: 20px;">{current_text['coffee_desc']}</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # 放置你的微信支付/赞赏码图片
+            # 建议将图片放在项目目录下，命名为 wechat_pay.png
+            st.image("wechat_pay.png", caption=current_text['coffee_title'], width=280)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button(current_text.get('close', '关闭'), key="close_coffee"):
+                st.session_state.coffee_modal_open = False
                 st.rerun()
 
     # ----------------------------------------------------
@@ -517,19 +569,34 @@ def render_home():
             </a>
             """, unsafe_allow_html=True)
 
-    # Footer 区域
+
+
+    # ==========================================
+    # 核心修改：底部 Footer 按钮触发
+    # ==========================================
+    # 我们需要把原来的 <a> 标签换成 st.button，并利用 CSS 保持样式一致
+    
     st.markdown(f"""
     <div class="footer-area">
         <div class="footer-title">{current_text['footer_title']}</div>
         <div class="footer-text">{current_text['footer_text']}</div>
-        <div class="footer-links">
-            <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn1']}</button></a>
-            <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
-            <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn3']}</button></a>
-        </div>
-        <div class="footer-creator">{current_text['footer_creator']}</div>
     </div>
     """, unsafe_allow_html=True)
+
+    # 在 footer-area 之后，使用 Streamlit 列来排列按钮，以实现点击交互
+    f_col1, f_col2, f_col3 = st.columns([1,1,1])
+    with f_col1:
+        st.markdown(f'<a href="https://neal.fun/newsletter/" target="_blank" class="neal-btn-link"><button class="neal-btn">{current_text["footer_btn1"]}</button></a>', unsafe_allow_html=True)
+    with f_col2:
+        # 这里演示点击弹出公众号二维码
+        if st.button(current_text['footer_btn2'], key="footer_qr_trigger"):
+            st.session_state.qrcode_modal_open = True
+            st.rerun()
+    with f_col3:
+        # 这里演示点击弹出微信支付
+        if st.button(current_text['footer_btn3'], key="footer_coffee_trigger"):
+            st.session_state.coffee_modal_open = True
+            st.rerun()
 
     # 浇水彩蛋
     water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
