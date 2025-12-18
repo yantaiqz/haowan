@@ -322,7 +322,7 @@ def render_home():
             def set_coffee(num):
                 st.session_state.coffee_num = num
 
-            st.markdown("---")  分割线
+            st.markdown("---")  #分割线
 
             # --- 3. 快速选择按钮 (1, 3, 5) ---
             # 使用 columns 布局让按钮排成一行
