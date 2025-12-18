@@ -252,11 +252,11 @@ def render_home():
 
     # --- 6. 底部统计 ---
     st.markdown(f"""
-    <div class="metric-container">
-        <span>Today: {random.randint(100,200)} visitors</span>
-        <span>Total: {random.randint(5000,6000)} unique souls</span>
-        <span>{current_text['footer_creator']}</span>
-    </div>
+<div class="metric-container">
+    <span>Today: {random.randint(100,200)} visitors</span>
+    <span>Total: {random.randint(5000,6000)} unique souls</span>
+    <span>{current_text['footer_creator']}</span>
+</div>
     """, unsafe_allow_html=True)
 
     # 浇水彩蛋 (简化)
