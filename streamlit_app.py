@@ -539,7 +539,7 @@ def render_home():
             
             # 放置你的微信支付/赞赏码图片
             # 建议将图片放在项目目录下，命名为 wechat_pay.png
-            st.image("wechat_pay.png", caption=current_text['coffee_title'], width=280)
+            st.image("wechat_pay.jpg", caption=current_text['coffee_title'], width=280)
             
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button(current_text.get('close', '关闭'), key="close_coffee"):
