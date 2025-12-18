@@ -35,8 +35,8 @@ lang_texts = {
         'page_title': '80后老登的工具箱',
         'subtitle': '守住底裤的 AI 网页小应用',
         'top_right_btn': '✨ 获得新应用',
-        'coffee_title': '请我喝杯咖啡 ☕',
-        'coffee_desc': '如果这些小工具让你感到有趣，欢迎支持我的创作。',
+        'coffee_title': '请老登喝杯咖啡 ☕',
+        'coffee_desc': '如果这些小工具让你感到有趣，欢迎支持老登的创作。',
         'footer_title': '关于本站',
         'footer_text': '这里收录了我这些年做的一系列小玩意儿。它们算不上什么实用的东西，但玩起来都还挺有意思的。',
         'footer_btn1': '订阅新应用 📰',
@@ -307,17 +307,58 @@ def render_home():
     # 咖啡弹窗
     if st.session_state.coffee_modal_open:
         with coffee_modal.container():
+            # --- 1. 标题与描述 ---
             st.markdown(f"""
-                <div style='text-align:center; margin-bottom:15px;'>
+                <div style='text-align:center;'>
                     <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
                 </div>
             """, unsafe_allow_html=True)
+            
+            # --- 2. 初始化数量状态 (默认1杯) ---
+            if 'coffee_num' not in st.session_state:
+                st.session_state.coffee_num = 1
+
+            # 定义回调函数：点击按钮直接修改 input 的值
+            def set_coffee(num):
+                st.session_state.coffee_num = num
+
+            st.markdown("---") # 分割线
+
+            # --- 3. 快速选择按钮 (1, 3, 5) ---
+            # 使用 columns 布局让按钮排成一行
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                # 点击时触发回调，将 coffee_num 设为 1
+                st.button("🍺 1杯", use_container_width=True, on_click=set_coffee, args=(1,))
+            with c2:
+                st.button("🍺 3杯", use_container_width=True, on_click=set_coffee, args=(3,))
+            with c3:
+                st.button("🍺 5杯", use_container_width=True, on_click=set_coffee, args=(5,))
+
+            # --- 4. 自定义输入与金额计算 ---
+            # 这里的 key='coffee_num' 绑定了上面的 session_state，实现双向绑定
+            count = st.number_input("或者自定义数量 (杯)", min_value=1, max_value=100, step=1, key='coffee_num')
+            
+            # 计算总金额 (单价 10)
+            total_price = count * 10
+
+            # --- 5. 显示总金额 (大号字体) ---
+            st.markdown(f"""
+                <div style='text-align:center; margin: 15px 0; padding: 10px; background-color:#f8f9fa; border-radius:8px;'>
+                    <div style="font-size:0.9rem; color:#666;">共 {count} 杯，需支付金额</div>
+                    <div style="font-size:2.2rem; font-weight:bold; color:#d9534f;">¥ {total_price}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # --- 6. 收款码图片 ---
             st.image("wechat_pay.jpg", width=220)
+            
             st.markdown("<br>", unsafe_allow_html=True)
+            
+            # --- 7. 关闭按钮 ---
             if st.button("Close", key="close_coffee", use_container_width=True):
                 st.session_state.coffee_modal_open = False
-                st.rerun()
-
+                st.rerun()   
             
     import sqlite3
     import uuid  # <--- 新增导入
