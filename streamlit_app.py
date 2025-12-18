@@ -1,6 +1,11 @@
 import streamlit as st
 import time
 import random
+import sqlite3
+import uuid
+import datetime
+import os
+from streamlit_modal import Modal  # 新增：引入弹窗组件
 
 # ==========================================
 # 1. 全局配置
@@ -20,6 +25,9 @@ if 'trigger_water' not in st.session_state:
 # 初始化语言状态
 if 'language' not in st.session_state:
     st.session_state.language = 'zh' 
+# 初始化弹窗状态（新增）
+if 'qrcode_modal_open' not in st.session_state:
+    st.session_state.qrcode_modal_open = False
 
 # ==========================================
 # 2. 多语言文本配置
@@ -36,6 +44,9 @@ lang_texts = {
         'footer_btn3': '请杯咖啡 ☕',
         'footer_creator': '老祁走❤️制作',
         'water_bubble': '已浇水 {count} 次',
+        # 新增：二维码弹窗文本
+        'qrcode_title': '扫码关注公众号，获取新应用',
+        'qrcode_desc': '微信扫码关注，第一时间获取最新应用更新',
         'games': [
             ("财富榜", "我能排第几", "💰", "https://youqian.streamlit.app/"),
             ("AI兔子", "一键检测AI内容痕迹", "🐰", "https://aituzi.streamlit.app/"),
@@ -59,6 +70,9 @@ lang_texts = {
         'footer_btn3': 'Buy me a coffee ☕',
         'footer_creator': 'Made with ❤️ by LaoQi',
         'water_bubble': 'Watered {count} times',
+        # 新增：二维码弹窗文本
+        'qrcode_title': 'Scan QR Code to Follow, Get New Apps',
+        'qrcode_desc': 'Scan with WeChat to get the latest app updates in time',
         'games': [
             ("Wealth Rankings", "Where do I stand?", "💰", "https://youqian.streamlit.app/"),
             ("AI Rabbit", "One-click AI content detection", "🐰", "https://aituzi.streamlit.app/"),
@@ -325,112 +339,31 @@ st.markdown("""
         transition: transform 0.2s ease; 
     }
     .plant-emoji:hover { transform: scale(1.08); }
+
+    /* 新增：二维码弹窗样式优化 */
+    .modal-content {
+        padding: 20px !important;
+        text-align: center !important;
+    }
+    .qrcode-img {
+        width: 300px !important;
+        height: 300px !important;
+        margin: 0 auto !important;
+    }
+    .qrcode-desc {
+        margin-top: 16px !important;
+        color: var(--color-gray-500) !important;
+        font-size: var(--text-base) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. 页面渲染逻辑
+# 4. 访问统计相关函数
 # ==========================================
-def render_home():
-    # ----------------------------------------------------
-    # 1. 顶部按钮行
-    # ----------------------------------------------------
-    c_spacer, c_lang, c_link = st.columns([10, 1.2, 1.8])
-    
-    with c_lang:
-        # 语言切换按钮
-        lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
-        if st.button(lang_btn_text, key="lang_switch_main"):
-            st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
-            st.rerun()
-
-    with c_link:
-        # 右上角链接按钮
-        st.markdown(f"""
-        <a href="https://neal.fun/newsletter/" target="_blank" class="neal-btn-link">
-            <button class="neal-btn">{current_text['top_right_btn']}</button>
-        </a>
-        """, unsafe_allow_html=True)
-
-    # ----------------------------------------------------
-    # 2. 页面主体
-    # ----------------------------------------------------
-    # 标题区
-    st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
-    
-    # 游戏卡片网格
-    cols = st.columns(3)
-    for idx, (title, desc, icon, url) in enumerate(current_text['games']):
-        with cols[idx % 3]:
-            st.markdown(f"""
-            <a href="{url}" target="_blank" class="card-link">
-                <div class="neal-card">
-                    <div class="card-icon">{icon}</div>
-                    <div class="card-content">
-                        <div class="card-title">{title}</div>
-                        <div class="card-desc">{desc}</div>
-                    </div>
-                </div>
-            </a>
-            """, unsafe_allow_html=True)
-
-    # Footer 区域
-    st.markdown(f"""
-    <div class="footer-area">
-        <div class="footer-title">{current_text['footer_title']}</div>
-        <div class="footer-text">{current_text['footer_text']}</div>
-        <div class="footer-links">
-            <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn1']}</button></a>
-            <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
-            <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn3']}</button></a>
-        </div>
-        <div class="footer-creator">{current_text['footer_creator']}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-
-    # 浇水彩蛋
-    water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
-    bubble_class = "show-bubble" if st.session_state.trigger_water else ""
-    st.markdown(f"""
-    <div class="plant-container">
-        <div class="water-bubble {bubble_class}">{water_bubble_text}</div>
-        <div class="plant-emoji">🪴</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 隐形浇水触发器
-    c1, c2 = st.columns([10, 1])
-    with c2:
-        if st.button("💧"):
-            st.session_state.water_count += 1
-            st.session_state.trigger_water = True
-            st.rerun()
-
-# ==========================================
-# 5. 程序入口
-# ==========================================
-if __name__ == "__main__":
-    render_home()
-    
-    if st.session_state.trigger_water:
-        time.sleep(1.5)
-        st.session_state.trigger_water = False
-        st.rerun()
-
-
-        
-import sqlite3
-import uuid  # <--- 新增导入
-import datetime
-import os
 # 持久化目录（Streamlit Share 仅~/目录可持久化）
 DB_DIR = os.path.expanduser("~/")
 DB_FILE = os.path.join(DB_DIR, "visit_stats.db")
-# -------------------------- 配置 --------------------------
-#DB_FILE = "visit_stats.db"
 
 def init_db():
     """初始化数据库（包含自动修复旧表结构的功能）"""
@@ -520,67 +453,129 @@ def track_and_get_stats():
     
     return today_uv, total_uv, today_pv
 
-# -------------------------- 页面展示 --------------------------
+# ==========================================
+# 5. 页面渲染逻辑
+# ==========================================
+def render_home():
+    # 初始化二维码弹窗（核心修改）
+    qrcode_modal = Modal(current_text['qrcode_title'], key="qrcode-modal", max_width=500)
+    
+    # ----------------------------------------------------
+    # 1. 顶部按钮行
+    # ----------------------------------------------------
+    c_spacer, c_lang, c_link = st.columns([10, 1.2, 1.8])
+    
+    with c_lang:
+        # 语言切换按钮
+        lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
+        if st.button(lang_btn_text, key="lang_switch_main"):
+            st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
+            st.rerun()
 
-# 执行统计
-try:
-    today_uv, total_uv, today_pv = track_and_get_stats()
-except Exception as e:
-    st.error(f"统计模块出错: {e}")
-    today_uv, total_uv, today_pv = 0, 0, 0
+    with c_link:
+        # 核心修改：替换原有跳转链接的按钮为弹窗触发按钮
+        if st.button(current_text['top_right_btn'], key="show_qrcode_btn"):
+            st.session_state.qrcode_modal_open = True
+    
+    # 核心修改：弹窗渲染逻辑
+    if st.session_state.qrcode_modal_open:
+        with qrcode_modal.container():
+            # 替换为你的公众号永久二维码图片地址
+            # 支持：1. 公网URL 2. 本地图片路径（需和脚本同目录）
+            st.image(
+                "https://your-qrcode-url.com/wechat-qrcode.png",  # 替换成实际二维码地址
+                caption=current_text['qrcode_desc'],
+                width=300,
+                use_column_width=False
+            )
+            # 关闭弹窗按钮
+            if st.button("关闭", key="close_qrcode_btn"):
+                st.session_state.qrcode_modal_open = False
+                st.rerun()
 
-# CSS 样式
-st.markdown("""
-<style>
-    .metric-container {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        border: 1px solid #e9ecef;
-    }
-    .metric-box {
-        text-align: center;
-    }
-    .metric-label {
-        color: #6c757d;
-        font-size: 0.85rem;
-        margin-bottom: 2px;
-    }
-    .metric-value {
-        color: #212529;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-    .metric-sub {
-        font-size: 0.7rem;
-        color: #adb5bd;
-    }
-    /* 优化右上角按钮样式 */
-    div[data-testid="column"]:nth-child(2) button {
-        width: 100%;
-        white-space: nowrap;
-        font-size: 0.85rem;
-        padding: 4px 8px;
-    }
-    /* 确保HTML按钮和原生按钮样式一致 */
-    div[data-testid="column"]:nth-child(3) button:hover {
-        background-color: #0284c7;
-    }
-</style>
-""", unsafe_allow_html=True)
+    # ----------------------------------------------------
+    # 2. 页面主体
+    # ----------------------------------------------------
+    # 标题区
+    st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="subtitle">{current_text["subtitle"]}</div>', unsafe_allow_html=True)
+    
+    # 游戏卡片网格
+    cols = st.columns(3)
+    for idx, (title, desc, icon, url) in enumerate(current_text['games']):
+        with cols[idx % 3]:
+            st.markdown(f"""
+            <a href="{url}" target="_blank" class="card-link">
+                <div class="neal-card">
+                    <div class="card-icon">{icon}</div>
+                    <div class="card-content">
+                        <div class="card-title">{title}</div>
+                        <div class="card-desc">{desc}</div>
+                    </div>
+                </div>
+            </a>
+            """, unsafe_allow_html=True)
 
-# 展示数据
-st.markdown(f"""
-<div class="metric-container">
-    <div class="metric-box">
-        <div class="metric-sub">今日 UV: {today_uv} 访客数</div>
+    # Footer 区域
+    st.markdown(f"""
+    <div class="footer-area">
+        <div class="footer-title">{current_text['footer_title']}</div>
+        <div class="footer-text">{current_text['footer_text']}</div>
+        <div class="footer-links">
+            <a href="https://neal.fun/newsletter/" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn1']}</button></a>
+            <a href="https://twitter.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn2']}</button></a>
+            <a href="https://buymeacoffee.com/nealagarwal" target="_blank" style="text-decoration:none"><button class="neal-btn">{current_text['footer_btn3']}</button></a>
+        </div>
+        <div class="footer-creator">{current_text['footer_creator']}</div>
     </div>
-    <div class="metric-box" style="border-left: 1px solid #dee2e6; border-right: 1px solid #dee2e6; padding-left: 20px; padding-right: 20px;">
-        <div class="metric-sub">历史总 UV: {total_uv} 总独立访客</div>
+    """, unsafe_allow_html=True)
+
+    # 浇水彩蛋
+    water_bubble_text = current_text['water_bubble'].format(count=st.session_state.water_count)
+    bubble_class = "show-bubble" if st.session_state.trigger_water else ""
+    st.markdown(f"""
+    <div class="plant-container">
+        <div class="water-bubble {bubble_class}">{water_bubble_text}</div>
+        <div class="plant-emoji">🪴</div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+    # 隐形浇水触发器
+    c1, c2 = st.columns([10, 1])
+    with c2:
+        if st.button("💧"):
+            st.session_state.water_count += 1
+            st.session_state.trigger_water = True
+            st.rerun()
+
+# ==========================================
+# 6. 程序入口
+# ==========================================
+if __name__ == "__main__":
+    # 执行访问统计
+    try:
+        today_uv, total_uv, today_pv = track_and_get_stats()
+    except Exception as e:
+        st.error(f"统计模块出错: {e}")
+        today_uv, total_uv, today_pv = 0, 0, 0
+    
+    # 渲染页面
+    render_home()
+    
+    # 展示访问统计数据
+    st.markdown(f"""
+    <div class="metric-container">
+        <div class="metric-box">
+            <div class="metric-sub">今日 UV: {today_uv} 访客数</div>
+        </div>
+        <div class="metric-box" style="border-left: 1px solid #dee2e6; border-right: 1px solid #dee2e6; padding-left: 20px; padding-right: 20px;">
+            <div class="metric-sub">历史总 UV: {total_uv} 总独立访客</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 浇水彩蛋的自动隐藏逻辑
+    if st.session_state.trigger_water:
+        time.sleep(1.5)
+        st.session_state.trigger_water = False
+        st.rerun()
