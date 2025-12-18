@@ -250,13 +250,16 @@ def render_home():
                 st.session_state.coffee_modal_open = False
                 st.rerun()
 
-    # --- 6. 底部统计 ---
+    # 展示数据
     st.markdown(f"""
-<div class="metric-container">
-    <span>Today: {random.randint(100,200)} visitors</span>
-    <span>Total: {random.randint(5000,6000)} unique souls</span>
-    <span>{current_text['footer_creator']}</span>
-</div>
+    <div class="metric-container">
+        <div class="metric-box">
+            <div class="metric-sub">今日 UV: {today_uv} 访客数</div>
+        </div>
+        <div class="metric-box" style="border-left: 1px solid #dee2e6; border-right: 1px solid #dee2e6; padding-left: 20px; padding-right: 20px;">
+            <div class="metric-sub">历史总 UV: {total_uv} 总独立访客</div>
+        </div>
+    </div>
     """, unsafe_allow_html=True)
 
     # 浇水彩蛋 (简化)
