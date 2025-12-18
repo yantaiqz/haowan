@@ -344,10 +344,10 @@ def render_home():
 
             # --- 5. 显示总金额 (大号字体) ---
             st.markdown(f"""
-                <div style='text-align:center; margin: 15px 0; padding: 10px; background-color:#f8f9fa; border-radius:8px;'>
-                    <div style="font-size:0.9rem; color:#666;">共 {count} 杯，需支付金额</div>
-                    <div style="font-size:2.2rem; font-weight:bold; color:#d9534f;">¥ {total_price}</div>
-                </div>
+<div style='text-align:center; margin: 15px 0; padding: 10px; background-color:#f8f9fa; border-radius:8px;'>
+    <div style="font-size:0.9rem; color:#666;">共 {count} 杯，需支付金额</div>
+    <div style="font-size:2.2rem; font-weight:bold; color:#d9534f;">¥ {total_price}</div>
+</div>
             """, unsafe_allow_html=True)
 
             # --- 6. 收款码图片 ---
@@ -356,7 +356,7 @@ def render_home():
             st.markdown("<br>", unsafe_allow_html=True)
             
             # --- 7. 关闭按钮 ---
-            if st.button("Close", key="close_coffee", use_container_width=True):
+            if st.button("关闭", key="close_coffee", use_container_width=True):
                 st.session_state.coffee_modal_open = False
                 st.rerun()   
             
