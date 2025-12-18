@@ -245,7 +245,7 @@ def render_home():
                 st.rerun()
         with inner_col2:
             if st.button("✨"):
-                st.session_state.qrcode_modal_open = True
+                show_qrcode_modal()  # 直接调用，不需要操作 session_state
 
     # --- 2. 标题区 ---
     st.markdown(f'<div class="main-title">{current_text["page_title"]}</div>', unsafe_allow_html=True)
