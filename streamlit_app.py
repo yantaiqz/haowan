@@ -225,9 +225,7 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
-    f_btns = st.columns([1,1,1])
-    with f_btns[0]:
-        st.markdown(f'<a href="#" style="text-decoration:none"><button class="stButton" style="width:100%">{current_text["footer_btn1"]}</button></a>', unsafe_allow_html=True)
+    f_btns = st.columns([3,1,1,3])
     with f_btns[1]:
         if st.button(current_text['footer_btn2']): st.session_state.qrcode_modal_open = True
     with f_btns[2]:
