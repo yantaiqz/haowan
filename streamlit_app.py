@@ -190,6 +190,42 @@ def init_db():
     conn.close()
     return DB_FILE
 
+
+# 定义原来的公众号弹窗内容
+@st.dialog("扫码关注，获取新应用")
+def show_qrcode_modal():
+    # 使用 st.columns 来居中图片，或者直接利用你的CSS样式
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image("qrcode_for_gh.jpg", width=220)
+    
+    st.markdown(f"""
+        <div style='text-align:center; margin-top:10px;'>
+            <span style='color:#666; font-size:0.9rem;'>{current_text['qrcode_desc']}</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 这里的按钮点击后会自动关闭弹窗，不需要写 st.rerun()
+    if st.button("Done", use_container_width=True):
+        st.rerun()
+
+# 定义原来的咖啡弹窗内容
+@st.dialog("请我喝杯咖啡 ☕")
+def show_coffee_modal():
+    st.markdown(f"""
+        <div style='text-align:center; margin-bottom:15px;'>
+            <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image("wechat_pay.jpg", width=220)
+        
+    if st.button("Close", use_container_width=True):
+        st.rerun()
+
+
 # ==========================================
 # 5. 渲染函数
 # ==========================================
@@ -242,10 +278,13 @@ def render_home():
 
     f_btns = st.columns([1,1,1,1])
     with f_btns[1]:
-        if st.button(current_text['footer_btn2']): st.session_state.qrcode_modal_open = True
+        if st.button(current_text['footer_btn2']): 
+            show_qrcode_modal()  # 直接调用
+            
     with f_btns[2]:
-        if st.button(current_text['footer_btn3']): st.session_state.coffee_modal_open = True
-
+        if st.button(current_text['footer_btn3']): 
+            show_coffee_modal()  # 直接调用
+            
   # --- 5. 弹窗容器处理 (简洁版) ---
     
     # 公众号弹窗
