@@ -240,6 +240,9 @@ def render_home():
                 st.session_state.qrcode_modal_open = False
                 st.rerun()
 
+        if not qr_modal.is_open():
+            st.session_state.qrcode_modal_open = False
+            
     if st.session_state.coffee_modal_open:
         with coffee_modal.container():
             st.markdown(f"<p style='text-align:center;'>{current_text['coffee_desc']}</p>", unsafe_allow_html=True)
@@ -247,7 +250,10 @@ def render_home():
             if st.button("Close", key="close_coffee"): 
                 st.session_state.coffee_modal_open = False
                 st.rerun()
-    
+        # 核心修复点：同步 X 按钮关闭状态
+        if not coffee_modal.is_open():
+            st.session_state.coffee_modal_open = False
+            
     import sqlite3
     import uuid  # <--- 新增导入
     import datetime
