@@ -465,6 +465,11 @@ def render_home():
     # ----------------------------------------------------
     c_spacer, c_lang, c_link = st.columns([8, 2, 2])
     
+    with c_link:
+        # 核心修改：替换原有跳转链接的按钮为弹窗触发按钮
+        if st.button(current_text['top_right_btn'], key="show_qrcode_btn"):
+            st.session_state.qrcode_modal_open = True
+
     with c_lang:
         # 语言切换按钮
         lang_btn_text = "English" if st.session_state.language == 'zh' else "中文"
@@ -472,10 +477,6 @@ def render_home():
             st.session_state.language = 'en' if st.session_state.language == 'zh' else 'zh'
             st.rerun()
 
-    with c_link:
-        # 核心修改：替换原有跳转链接的按钮为弹窗触发按钮
-        if st.button(current_text['top_right_btn'], key="show_qrcode_btn"):
-            st.session_state.qrcode_modal_open = True
     
     # 核心修改：弹窗渲染逻辑
     if st.session_state.qrcode_modal_open:
