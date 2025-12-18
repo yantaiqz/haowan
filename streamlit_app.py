@@ -225,7 +225,7 @@ def render_home():
     </div>
     """, unsafe_allow_html=True)
 
-    f_btns = st.columns([3,1,1,3])
+    f_btns = st.columns([2,1,1,2])
     with f_btns[1]:
         if st.button(current_text['footer_btn2']): st.session_state.qrcode_modal_open = True
     with f_btns[2]:
