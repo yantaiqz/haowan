@@ -261,7 +261,7 @@ def show_qrcode_window():
         st.rerun()
 
 # --- 咖啡赞赏弹窗 (包含计算逻辑) ---
-@st.dialog("请我喝杯咖啡 ☕")
+@st.dialog("请老登喝杯咖啡吧 ☕")
 def show_coffee_window():
     # 1. 描述文本
     st.markdown(f"""
@@ -300,7 +300,7 @@ def show_coffee_window():
     total_price = count * 10
     st.markdown(f"""
         <div style='text-align:center; margin: 15px 0; padding: 15px; background-color:#f8f9fa; border-radius:12px; border:1px solid #eee;'>
-            <div style="font-size:0.9rem; color:#666;">支持 {count} 杯，需支付</div>
+            <div style="font-size:0.9rem; color:#666;">支持 {count} 杯需</div>
             <div style="font-size:2.4rem; font-weight:800; color:#d9534f; line-height:1.2;">¥ {total_price}</div>
         </div>
     """, unsafe_allow_html=True)
