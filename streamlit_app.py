@@ -312,14 +312,8 @@ def render_home():
     # 咖啡弹窗
     if st.session_state.coffee_modal_open:
         with coffee_modal.container():
-            # --- 1. 标题与描述 ---
-            st.markdown(f"""
-                <div style='text-align:center;'>
-                    <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # --- 2. 初始化数量状态 (默认1杯) ---
+
+          # --- 2. 初始化数量状态 (默认1杯) ---
             if 'coffee_num' not in st.session_state:
                 st.session_state.coffee_num = 1
 
@@ -354,6 +348,16 @@ def render_home():
     <div style="font-size:2.2rem; font-weight:bold; color:#d9534f;">¥ {total_price}</div>
 </div>
             """, unsafe_allow_html=True)
+
+            
+            # --- 1. 标题与描述 ---
+            st.markdown(f"""
+                <div style='text-align:center;'>
+                    <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+          
 
             # --- 6. 收款码图片 ---
             st.image("wechat_pay.jpg", width=220)
