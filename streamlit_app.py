@@ -97,17 +97,13 @@ st.markdown(f"""
     .stApp {{ background-color: #FFFFFF !important; }}
     .block-container {{ padding-top: 2rem; max-width: 1000px !important; }}
     
-    /* 隐藏多余组件 */
-    #MainMenu, footer, header {{visibility: hidden;}}
-    #.stDeployButton {{display: none;}}
-
-
-    /* 仅隐藏底部的开发信息，保留顶部的 header (工具栏) */
-    #footer {{visibility: hidden;}}
+    /* 隐藏右上角的 Streamlit 主菜单（包含部署、源码、设置等） */
+    #MainMenu {visibility: hidden;}
+    /* 隐藏页脚（包含 "Made with Streamlit" 文字） */
+    #footer {visibility: hidden;}
+    /* 隐藏顶部的 header（包含部署按钮） */
+    #header[data-testid="stHeader"] {display: none;}
     
-    /* 如果你想隐藏那个蓝色的 'Deploy' 按钮但保留菜单，可以取消下面这行的注释 */
-    #.stDeployButton {{display: none;}}
-
     
     /* 标题排版 */
     .main-title {{
