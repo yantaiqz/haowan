@@ -308,67 +308,78 @@ def render_home():
                 st.rerun()
  
 
-
     # 咖啡弹窗
     if st.session_state.coffee_modal_open:
         with coffee_modal.container():
+            # ==========================================
+            # 1. 顶部：标题与描述 (调整到最上面)
+            # ==========================================
+            st.markdown(f"""
+                <div style='text-align:center; margin-bottom: 10px;'>
+                    <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
+                </div>
+            """, unsafe_allow_html=True)
 
-          # --- 2. 初始化数量状态 (默认1杯) ---
+            # ==========================================
+            # 2. 中部：交互区 (按钮 + 输入框)
+            # ==========================================
             if 'coffee_num' not in st.session_state:
                 st.session_state.coffee_num = 1
 
-            # 定义回调函数：点击按钮直接修改 input 的值
             def set_coffee(num):
                 st.session_state.coffee_num = num
 
-            st.markdown("---")  #分割线
+            # 缩减垂直间距，把分割线去掉或者换成简单的空白
+            st.write("") 
 
-            # --- 3. 快速选择按钮 (1, 3, 5) ---
-            # 使用 columns 布局让按钮排成一行
+            # 快速选择按钮
             c1, c2, c3 = st.columns(3)
             with c1:
-                # 点击时触发回调，将 coffee_num 设为 1
                 st.button("🍺 1杯", use_container_width=True, on_click=set_coffee, args=(1,))
             with c2:
                 st.button("🍺 3杯", use_container_width=True, on_click=set_coffee, args=(3,))
             with c3:
                 st.button("🍺 5杯", use_container_width=True, on_click=set_coffee, args=(5,))
 
-            # --- 4. 自定义输入与金额计算 ---
-            # 这里的 key='coffee_num' 绑定了上面的 session_state，实现双向绑定
+            # 输入框
             count = st.number_input("或者自定义数量 (杯)", min_value=1, max_value=100, step=1, key='coffee_num')
             
-            # 计算总金额 (单价 10)
+            # ==========================================
+            # 3. 结果反馈区
+            # ==========================================
             total_price = count * 10
-
-            # --- 5. 显示总金额 (大号字体) ---
             st.markdown(f"""
-<div style='text-align:center; margin: 15px 0; padding: 10px; background-color:#f8f9fa; border-radius:8px;'>
-    <div style="font-size:0.9rem; color:#666;">共 {count} 杯，需支付金额</div>
-    <div style="font-size:2.2rem; font-weight:bold; color:#d9534f;">¥ {total_price}</div>
-</div>
-            """, unsafe_allow_html=True)
-
-            
-            # --- 1. 标题与描述 ---
-            st.markdown(f"""
-                <div style='text-align:center;'>
-                    <span style='font-size:1rem; color:#444;'>{current_text['coffee_desc']}</span>
+                <div style='text-align:center; margin: 10px 0; padding: 10px; background-color:#f8f9fa; border-radius:8px;'>
+                    <div style="font-size:0.9rem; color:#666;">需支付金额</div>
+                    <div style="font-size:2rem; font-weight:bold; color:#d9534f;">¥ {total_price}</div>
                 </div>
             """, unsafe_allow_html=True)
-            
-          
 
-            # --- 6. 收款码图片 ---
-            st.image("wechat_pay.jpg", width=220)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # --- 7. 关闭按钮 ---
+            # ==========================================
+            # 4. 底部：图片与关闭
+            # ==========================================
+            # 检查点：确保图片路径正确，否则后面代码不执行
+            try:
+                # 限制图片宽度，防止占满屏幕导致看不到关闭按钮
+                col_img1, col_img2, col_img3 = st.columns([1,2,1])
+                with col_img2:
+                    st.image("wechat_pay.jpg", use_container_width=True)
+            except:
+                st.error("图片加载失败")
+
+            st.write("") # 垫一点空隙
+
             if st.button("关闭", key="close_coffee", use_container_width=True):
                 st.session_state.coffee_modal_open = False
-                st.rerun()   
+                st.rerun()    
             
+            # 实时同步检测 (防止死循环的关键)
+            if not coffee_modal.is_open():
+                 st.session_state.coffee_modal_open = False
+                 st.rerun()
+
+                 
+    
     import sqlite3
     import uuid  # <--- 新增导入
     import datetime
