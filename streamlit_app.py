@@ -99,7 +99,7 @@ st.markdown(f"""
     
     /* 隐藏多余组件 */
     #MainMenu, footer, header {{visibility: hidden;}}
-    .stDeployButton {{display: none;}}
+    #.stDeployButton {{display: none;}}
 
     /* 标题排版 */
     .main-title {{
