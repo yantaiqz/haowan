@@ -106,7 +106,7 @@ st.markdown(f"""
     footer {{visibility: hidden;}}
     
     /* 如果你想隐藏那个蓝色的 'Deploy' 按钮但保留菜单，可以取消下面这行的注释 */
-    .stDeployButton {display: none;}
+    .stDeployButton {{display: none;}}
 
     
     /* 标题排版 */
