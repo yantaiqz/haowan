@@ -98,11 +98,11 @@ st.markdown(f"""
     .block-container {{ padding-top: 2rem; max-width: 1000px !important; }}
     
     /* 隐藏右上角的 Streamlit 主菜单（包含部署、源码、设置等） */
-    #MainMenu {visibility: hidden;}
+    MainMenu {visibility: hidden;}
     /* 隐藏页脚（包含 "Made with Streamlit" 文字） */
-    #footer {visibility: hidden;}
+    footer {visibility: hidden;}
     /* 隐藏顶部的 header（包含部署按钮） */
-    #header[data-testid="stHeader"] {display: none;}
+    header[data-testid="stHeader"] {display: none;}
     
     
     /* 标题排版 */
