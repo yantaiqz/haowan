@@ -31,7 +31,7 @@ lang_texts = {
         'subtitle': '守住底裤的 AI 网页小应用',
         'top_right_btn': '✨ 获得新应用',
         'coffee_title': '请老登喝杯咖啡 ☕',
-        'coffee_desc': '如果这些小工具让你感到有趣，欢迎支持老登的创作。',
+        'coffee_desc': '如果这些小工具让你感到了底线，欢迎支持老登的创作。',
         'footer_title': '关于本站',
         'footer_text': '这里收录了我这些年做的一系列小玩意儿。它们算不上什么实用的东西，但玩起来都还挺有意思的。',
         'footer_btn1': '订阅新应用 📰',
