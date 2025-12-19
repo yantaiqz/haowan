@@ -98,9 +98,18 @@ st.markdown(f"""
     .block-container {{ padding-top: 2rem; max-width: 1000px !important; }}
     
     /* 隐藏多余组件 */
-    MainMenu, footer, header {{visibility: hidden;}}
-    .stDeployButton {{display: none;}}
+    #MainMenu, footer, header {{visibility: hidden;}}
+    #.stDeployButton {{display: none;}}
 
+
+    /* 仅隐藏底部的开发信息，保留顶部的 header (工具栏) */
+    footer {visibility: hidden;}
+    /* #MainMenu, header {visibility: hidden;}  <-- 注释掉或删除这一行 */
+    
+    /* 如果你想隐藏那个蓝色的 'Deploy' 按钮但保留菜单，可以取消下面这行的注释 */
+    .stDeployButton {display: none;}
+
+    
     /* 标题排版 */
     .main-title {{
         text-align: center; font-size: 3.5rem; font-weight: 900;
