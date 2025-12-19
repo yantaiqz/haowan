@@ -98,8 +98,8 @@ st.markdown(f"""
     .block-container {{ padding-top: 2rem; max-width: 1000px !important; }}
     
     /* 隐藏多余组件 */
-    #MainMenu, footer, header {{visibility: hidden;}}
-    #.stDeployButton {{display: none;}}
+    MainMenu, footer, header {{visibility: hidden;}}
+    .stDeployButton {{display: none;}}
 
     /* 标题排版 */
     .main-title {{
