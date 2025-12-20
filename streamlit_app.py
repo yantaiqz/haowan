@@ -302,7 +302,7 @@ def show_coffee_window():
 
     # 5. 支付反馈 (Fake Action)
     st.write("")
-    if st.button(current_text['paid_btn'], type="primary", use_container_width=True):
+    if st.button(current_text['paid_btn'], use_container_width=True):
         st.balloons()
         st.success(current_text['paid_toast'].format(count=cnt))
         time.sleep(2)
