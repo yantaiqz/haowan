@@ -59,7 +59,11 @@ lang_texts = {
             # 新增3个应用 - 中文配置
             ("生死观测台", "生命状态监测查询", "⚰️", "https://baobei.streamlit.app/"),
             ("花光三马的钱", "模拟消耗巨额财富", "💸", "https://mababa.streamlit.app/"),
-            ("国宝私有化", "中国文物私有化大拍卖", "🏺", "https://bowuguan.streamlit.app/")
+            ("国宝私有化", "中国文物私有化大拍卖", "🏺", "https://bowuguan.streamlit.app/"),
+            # 新增3个应用 - 中文配置
+            ("为什么要抓马杜罗", "委内瑞拉的石油和毒品", "🛢️", "https://venezuela.streamlit.app/"),  # 🌍 对应国家、地缘政治主题
+            ("MBTI对话助手", "用AI对付MBTI", "🧠", "https://mbtibot.streamlit.app/"),  # 🧠 对应人格、AI对话核心功能
+            ("MBTI亿万富翁", "我的性格怎么发财", "🧬", "https://1000000.streamlit.app/")  # 💰 直接关联财富、发财主题
         ]
     },
     'en': {
@@ -93,7 +97,10 @@ lang_texts = {
             # 新增3个应用 - 英文配置（保持功能对应，符合英文用户认知）
             ("Life & Death Observer", "Life status monitoring & inquiry", "⚰️", "https://baobei.streamlit.app/"),
             ("Spend Three Tycoons' Wealth", "Simulate spending huge wealth", "💸", "https://mababa.streamlit.app/"),
-            ("National Treasure Privatization", "Cultural relic ownership simulation", "🏺", "https://bowuguan.streamlit.app/")
+            ("National Treasure Privatization", "Cultural relic ownership simulation", "🏺", "https://bowuguan.streamlit.app/"),
+            ("Why arrest Maduro?", "Venezuela's oil and drugs", "🛢️", "https://venezuela.streamlit.app/"),
+            ("MBTI Chat Assistant", "AI-powered MBTI interactions", "🧠", "https://mbtibot.streamlit.app/"),
+            ("MBTI Billionaire", "How my personality leads to wealth", "🧬", "https://1000000.streamlit.app/")
         ]
     }
 }
